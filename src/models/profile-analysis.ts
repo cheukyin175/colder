@@ -23,6 +23,7 @@ export interface ProfileAnalysis {
   analyzedAt: Date;
   modelUsed: string;             // e.g., "gpt-4o-2024-08-06"
   tokensUsed: number;
+  analysisTime?: number;         // Time taken in milliseconds
 }
 
 export interface TalkingPoint {

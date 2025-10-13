@@ -152,19 +152,23 @@ mkdir -p assets
 
 **Acceptance**: All models match data-model.md specifications, compile without errors.
 
-### T010 [P]: Implement LinkedIn Selectors Utility
+### T010 [P]: Implement LinkedIn Selectors Utility (Simplified)
 **File**: `src/utils/linkedin-selectors.ts`
-**Description**: Create multi-fallback selector patterns for LinkedIn DOM elements.
-Implement selector functions for:
-- Name extraction (3+ fallback selectors)
-- Job title extraction (3+ fallback selectors)
-- Company extraction (3+ fallback selectors)
-- Work experience extraction
-- Recent posts extraction
+**Description**: Create simplified extraction functions for LinkedIn DOM.
+Implement functions for:
+- Extract all text from profile sections (about, experience, education, skills, etc.)
+- Extract recent posts/activity with full content
+- Format extracted text with clear section separators for AI
+- Skip ads and non-profile content
+- Return raw text, not structured data
 
-Each function should try multiple selectors and return null gracefully if none match.
+Key functions:
+- `extractProfileForAI()` - returns all profile text formatted for AI prompt
+- `formatProfileForPrompt()` - creates structured text output
+- `getSectionText(sectionId)` - gets all text from a section
+- `extractRecentPosts()` - gets full post content
 
-**Acceptance**: Unit tests pass for selector fallback logic.
+**Acceptance**: Functions extract comprehensive raw text from all profile sections.
 
 ### T011 [P]: Implement Error Handlers Utility
 **File**: `src/utils/error-handlers.ts`
@@ -227,6 +231,8 @@ Use storage keys from data-model.md. Handle sync vs local storage appropriately.
 
 ## Phase 3: User Story 1 (P1) - Profile Analysis & Message Generation
 
+**⚠️ SIMPLIFIED APPROACH**: We now extract ALL raw text from LinkedIn profiles and feed it directly to the AI. No complex parsing or field extraction - the AI naturally understands the context from the raw formatted text. This approach is more robust and produces better personalization.
+
 **Story Goal**: User visits LinkedIn profile → activates extension → receives personalized message draft.
 
 **Independent Test Criteria**:
@@ -234,9 +240,9 @@ Use storage keys from data-model.md. Handle sync vs local storage appropriately.
 - Click extension icon
 - See profile analysis within 10 seconds (SC-001)
 - Generated message includes 2+ target profile references (SC-002)
-- Message displayed with annotations showing source attribution
+- Message uses specific details from profile content (recent posts, experiences, skills)
 
-### T016 [US1]: Implement Target Profile Model Storage
+### T016 [US1]: Implement Target Profile Model Storage ✅
 **File**: `src/services/storage-service.ts`
 **Description**: Add TargetProfile storage methods to StorageService.
 - `getTargetProfile(profileId)`
@@ -245,7 +251,7 @@ Use storage keys from data-model.md. Handle sync vs local storage appropriately.
 
 **Acceptance**: Target profiles cache and expire correctly.
 
-### T017 [US1]: Implement Profile Analysis Model Storage
+### T017 [US1]: Implement Profile Analysis Model Storage ✅
 **File**: `src/services/storage-service.ts`
 **Description**: Add ProfileAnalysis storage methods.
 - `getProfileAnalysis(analysisId)`
@@ -253,21 +259,22 @@ Use storage keys from data-model.md. Handle sync vs local storage appropriately.
 
 **Acceptance**: Analyses cache correctly with 24h TTL.
 
-### T018 [US1]: Implement LinkedIn Profile Extractor
+### T018 [US1]: Implement LinkedIn Profile Extractor (Simplified) ✅
 **File**: `src/content/linkedin-extractor.ts`
-**Description**: Extract profile data from LinkedIn DOM (FR-001, FR-010).
-- Use multi-fallback selectors from `linkedin-selectors.ts`
-- Extract: name, job title, company, work experience (last 2), education, recent posts (last 5)
-- Calculate extraction quality (complete/partial/minimal)
-- Track missing fields for user notification (FR-012)
+**Description**: Extract ALL profile content from LinkedIn DOM for AI processing (FR-001, FR-010).
+- Extract raw text from all profile sections (about, experience, education, skills, etc.)
+- Get recent posts/activity content (full text, not summaries)
+- No complex parsing - just gather all text content
+- Format as structured text for AI prompt (clear section separators)
+- Skip ads and non-profile content
 - Handle non-profile pages gracefully (FR-010)
 
 **Acceptance**:
-- Extracts data from test LinkedIn profile HTML
-- Returns correct extraction quality
-- Handles missing data gracefully
+- Extracts comprehensive raw text from LinkedIn profile
+- Returns formatted text ready for AI processing
+- All sections clearly separated in output
 
-### T019 [US1]: Implement Content Script
+### T019 [US1]: Implement Content Script ✅
 **File**: `src/content/index.ts`
 **Description**: Create Plasmo content script for LinkedIn pages.
 - Detect LinkedIn profile pages (use URL pattern matching)
@@ -278,7 +285,7 @@ Use storage keys from data-model.md. Handle sync vs local storage appropriately.
 
 **Acceptance**: Content script injects successfully, extracts profiles on command.
 
-### T020 [US1]: Implement Profile Service
+### T020 [US1]: Implement Profile Service ✅
 **File**: `src/services/profile-service.ts`
 **Description**: Implement ProfileService per contracts/profile-service.ts.
 Methods:
@@ -288,20 +295,28 @@ Methods:
 
 **Acceptance**: Service methods work correctly, integrate with storage.
 
-### T021 [US1]: Create LangChain Profile Analyzer Prompt
+### T021 [US1]: Create LangChain Profile Analyzer Prompt ✅ (Simplified)
 **File**: `src/background/agent/prompts/profile-analyzer.ts`
 **Description**: Create prompt template for profile analysis (FR-003).
 Prompt should:
-- Accept targetProfile and userProfile as inputs
-- Request structured output (JSON mode)
+- Accept raw LinkedIn profile text (formatted with sections) as input
+- Accept userProfile as secondary input
+- AI extracts relevant details from raw text naturally
 - Identify talking points, mutual interests, connection opportunities
 - Suggest approach and caution flags
+- Request structured output (JSON mode)
 
-Include 2-3 few-shot examples.
+The AI will parse the raw profile text to understand:
+- Current role, company, experience progression
+- Skills and expertise
+- Recent activity and interests
+- Education background
 
-**Acceptance**: Prompt template compiles and formats correctly.
+Include 2-3 few-shot examples with raw profile text.
 
-### T022 [US1]: Implement Profile Analyzer Agent
+**Acceptance**: Prompt template works with raw text input, AI extracts details correctly.
+
+### T022 [US1]: Implement Profile Analyzer Agent ✅
 **File**: `src/background/agent/profile-analyzer.ts`
 **Description**: Implement LangChain profile analysis chain (FR-003).
 - Initialize ChatOpenAI with OpenRouter config
@@ -316,22 +331,30 @@ Include 2-3 few-shot examples.
 - Completes within 5 seconds
 - Handles API errors
 
-### T023 [US1]: Create LangChain Message Generator Prompt
+### T023 [US1]: Create LangChain Message Generator Prompt ✅ (Simplified)
 **File**: `src/background/agent/prompts/message-generator.ts`
 **Description**: Create prompt template for message generation (FR-004, FR-005).
 Prompt should:
-- Accept profile analysis, userProfile, tone, length
-- Generate personalized message
-- Include annotations for source attribution
+- Accept raw LinkedIn profile text directly (no intermediate analysis needed)
+- Accept userProfile, tone, length parameters
+- AI extracts relevant details from raw text to personalize message
+- Generate highly personalized message based on profile content
 - Reference at least 2 specific details from target profile (SC-002)
+- Consider recent posts/activity for personalization
 - Match tone preset (professional/casual/enthusiastic)
 - Match length requirement (50-100/100-200/200-300 words)
 
-Include few-shot examples for each tone.
+The AI will:
+- Parse the raw profile text to find relevant talking points
+- Identify mutual interests or connection opportunities
+- Reference specific experiences, skills, or recent activity
+- Generate natural, personalized outreach
 
-**Acceptance**: Prompt generates messages matching specifications.
+Include few-shot examples with raw profile text for each tone.
 
-### T024 [US1]: Implement Message Generator Agent
+**Acceptance**: Prompt generates highly personalized messages from raw profile text.
+
+### T024 [US1]: Implement Message Generator Agent ✅
 **File**: `src/background/agent/message-generator.ts`
 **Description**: Implement LangChain message generation chain (FR-004, FR-005, FR-006, FR-007).
 - Initialize ChatOpenAI with OpenRouter config
@@ -346,7 +369,7 @@ Include few-shot examples for each tone.
 - Includes proper annotations
 - Completes within 10 seconds total (with analysis time, SC-001)
 
-### T025 [US1]: Implement Message Service
+### T025 [US1]: Implement Message Service ✅
 **File**: `src/services/message-service.ts`
 **Description**: Implement MessageService per contracts/message-service.ts.
 Methods for US1:
@@ -355,7 +378,7 @@ Methods for US1:
 
 **Acceptance**: Service generates valid messages through agent.
 
-### T026 [US1]: Add Message Draft Storage
+### T026 [US1]: Add Message Draft Storage ✅
 **File**: `src/services/storage-service.ts`
 **Description**: Add MessageDraft storage methods.
 - `getMessageDraft(draftId)`
@@ -364,7 +387,7 @@ Methods for US1:
 
 **Acceptance**: Drafts persist correctly.
 
-### T027 [US1]: Create Popup UI Component - Message Draft Display
+### T027 [US1]: Create Popup UI Component - Message Draft Display ✅
 **File**: `src/popup/components/MessageDraft.tsx`
 **Description**: React component to display generated message (FR-005).
 - Show subject and body
@@ -374,7 +397,7 @@ Methods for US1:
 
 **Acceptance**: Component renders message with clear source attribution.
 
-### T028 [US1]: Create Popup UI Component - Loading State
+### T028 [US1]: Create Popup UI Component - Loading State ✅
 **File**: `src/popup/components/LoadingState.tsx`
 **Description**: Loading indicator during profile analysis and message generation.
 - Show "Analyzing profile..." state
@@ -384,7 +407,7 @@ Methods for US1:
 
 **Acceptance**: Loading states display correctly during generation.
 
-### T029 [US1]: Implement Popup Main View
+### T029 [US1]: Implement Popup Main View ✅
 **File**: `src/popup/index.tsx`
 **Description**: Main popup UI that orchestrates US1 flow.
 - Detect current LinkedIn profile URL

@@ -33,6 +33,9 @@ export interface TargetProfile {
   extractedAt: Date;
   extractionQuality: ExtractionQuality; // 'complete' | 'partial' | 'minimal'
   missingFields: string[];       // List of fields that couldn't be extracted
+
+  // Raw profile text for AI processing (optional)
+  rawProfileText?: string;       // Formatted text version of the profile for AI prompts
 }
 
 export interface WorkExperience {

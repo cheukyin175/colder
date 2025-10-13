@@ -8,9 +8,11 @@ import {
   extractJobTitle,
   extractCompany,
   extractWorkExperience,
-  extractRecentPosts,
   extractEducation,
   extractSkills,
+  extractRecentPosts,
+  extractProfileForAI,
+  formatProfileForPrompt,
   isLinkedInProfilePage,
   getProfileUrl,
   waitForProfileLoad
@@ -58,49 +60,66 @@ export async function extractLinkedInProfile(): Promise<TargetProfile> {
     );
   }
 
-  // Extract detailed information
-  const workExperience = extractWorkExperience();
-  const recentPosts = extractRecentPosts();
-  const education = extractEducation();
-  const skills = extractSkills();
+  // Extract detailed information using simplified approach
+  const profileData = extractProfileForAI();
+  const formattedProfile = formatProfileForPrompt();
 
   console.log('[LinkedIn Extractor] Extracted data:', {
-    name,
-    currentJobTitle: currentJobTitle || 'Not found',
-    currentCompany: currentCompany || 'Not found',
-    workExperienceCount: workExperience.length,
-    recentPostsCount: recentPosts.length,
-    educationCount: education.length,
-    skillsCount: skills.length
+    name: profileData.name || 'Not found',
+    headline: profileData.headline || 'Not found',
+    currentCompany: profileData.company || 'Not found',
+    hasExperience: profileData.experience !== 'No work experience information available.',
+    hasEducation: profileData.education !== 'No education information available.',
+    skillsCount: profileData.skills.length
   });
 
-  // Create target profile
+  // Log formatted profile for debugging
+  console.log('[LinkedIn Extractor] Formatted profile:', formattedProfile.substring(0, 500) + '...');
+
+  // Create target profile with simplified data
+  // Parse the experience text into structured format for compatibility
+  const workExperienceArray = profileData.experience !== 'No work experience information available.'
+    ? [{
+        title: currentJobTitle || 'Position',
+        company: currentCompany || 'Company',
+        startDate: '',
+        endDate: null,
+        duration: '',
+        description: profileData.experience.substring(0, 500) // Limit description length
+      }]
+    : [];
+
+  // Parse education text
+  const educationArray = profileData.education !== 'No education information available.'
+    ? [{
+        institution: 'See education details',
+        degree: '',
+        field: null,
+        graduationYear: null
+      }]
+    : [];
+
+  // Parse activity as recent posts
+  const recentPostsArray = profileData.activity !== 'No recent activity.'
+    ? [{
+        content: profileData.activity,
+        postedAt: new Date(),
+        engagement: { likes: 0, comments: 0 }
+      }]
+    : [];
+
   const profile = createTargetProfile({
     linkedinUrl,
     name,
     currentJobTitle,
     currentCompany,
-    workExperience: workExperience.map(exp => ({
-      title: exp.title,
-      company: exp.company,
-      startDate: '', // LinkedIn doesn't always show dates in accessible format
-      endDate: null,
-      duration: exp.duration,
-      description: exp.description
-    })),
-    education: education.map(edu => ({
-      institution: edu.school,
-      degree: edu.degree || '',
-      field: edu.field,
-      graduationYear: edu.years ? parseInt(edu.years.match(/\d{4}/)?.[0] || '0') || null : null
-    })),
-    recentPosts: recentPosts.map(post => ({
-      content: post.content,
-      postedAt: new Date(), // We'd need to parse the timestamp
-      engagement: post.engagement
-    })),
-    skills,
-    mutualConnections: extractMutualConnections()
+    workExperience: workExperienceArray,
+    education: educationArray,
+    recentPosts: recentPostsArray,
+    skills: profileData.skills,
+    mutualConnections: extractMutualConnections(),
+    // Add the raw formatted text for AI processing
+    rawProfileText: formattedProfile
   });
 
   // Log extraction quality
@@ -110,17 +129,14 @@ export async function extractLinkedInProfile(): Promise<TargetProfile> {
     console.log('[LinkedIn Extractor] Missing fields:', missingFields);
   }
 
-  // Throw warning if extraction quality is poor
+  // Don't throw error for minimal quality - just log it
+  // Many profiles legitimately have limited information
   if (quality === 'minimal') {
-    throw new ExtractionError(
-      'Limited profile information extracted',
-      missingFields,
-      quality
-    );
+    console.warn('[LinkedIn Extractor] Limited profile information available');
   }
 
   if (quality === 'partial' && missingFields.length > 0) {
-    console.warn('[LinkedIn Extractor] Some fields could not be extracted:', missingFields);
+    console.log('[LinkedIn Extractor] Some fields could not be extracted:', missingFields);
   }
 
   return profile;
@@ -199,7 +215,8 @@ export function checkExtractionCapability(): {
   const isProfilePage = isLinkedInProfilePage();
   const hasName = !!extractName();
   const hasJobInfo = !!(extractJobTitle() || extractCompany());
-  const hasExperience = extractWorkExperience().length > 0;
+  const experienceText = extractWorkExperience();
+  const hasExperience = experienceText !== 'No work experience information available.';
 
   let score = 0;
   if (isProfilePage) score += 25;
@@ -235,7 +252,13 @@ export async function extractProfileWithRetry(maxAttempts = 3): Promise<TargetPr
       return profile;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(`[LinkedIn Extractor] Attempt ${attempt} failed:`, lastError.message);
+
+      // Only log as warning if it's the last attempt
+      if (attempt === maxAttempts) {
+        console.warn(`[LinkedIn Extractor] All extraction attempts failed:`, lastError.message);
+      } else {
+        console.log(`[LinkedIn Extractor] Attempt ${attempt}/${maxAttempts} - retrying...`);
+      }
 
       if (attempt < maxAttempts) {
         // Scroll to trigger lazy loading

@@ -86,7 +86,18 @@ class MessageHandler {
     // Extension status
     this.handlers.set(MessageType.EXTENSION_STATUS, this.handleExtensionStatus);
 
-    // Profile and message handlers will be added in user story phases
+    // Profile and message handlers (Phase 3 - User Story 1)
+    this.handlers.set(MessageType.PROFILE_ANALYZE, this.handleAnalyzeProfile);
+    this.handlers.set(MessageType.MESSAGE_GENERATE, this.handleGenerateMessage);
+
+    // Add string-based handlers for popup compatibility
+    this.handlers.set('GET_USER_PROFILE' as any, this.handleGetUserProfile);
+    this.handlers.set('ANALYZE_PROFILE' as any, this.handleAnalyzeProfile);
+    this.handlers.set('GENERATE_MESSAGE' as any, this.handleGenerateMessage);
+    this.handlers.set('CHANGE_TONE' as any, this.handleChangeTone);
+    this.handlers.set('CHANGE_LENGTH' as any, this.handleChangeLength);
+    this.handlers.set('SAVE_EDIT' as any, this.handleSaveEdit);
+    this.handlers.set('RECORD_OUTREACH' as any, this.handleRecordOutreach);
   }
 
   /**
@@ -208,6 +219,133 @@ class MessageHandler {
       profileComplete: userProfile?.completeness || 0,
       storageUsage
     };
+  }
+
+  // --------------------------------------------------------------------------
+  // Phase 3: Profile Analysis & Message Generation Handlers
+  // --------------------------------------------------------------------------
+
+  private async handleAnalyzeProfile(message: Message): Promise<any> {
+    const { targetProfile, userProfileId } = message.payload;
+
+    if (!targetProfile) {
+      throw new Error('Target profile is required');
+    }
+
+    // Get user profile
+    const userProfile = await storageService.getUserProfile();
+    if (!userProfile) {
+      throw new Error('User profile not found. Please set up your profile first.');
+    }
+
+    // Use profile service to analyze
+    const { profileService } = await import('../services/profile-service');
+    const analysis = await profileService.analyzeProfile(targetProfile, userProfile);
+
+    return analysis;
+  }
+
+  private async handleGenerateMessage(message: Message): Promise<any> {
+    const { analysis, userProfileId, tone, length } = message.payload;
+
+    if (!analysis) {
+      throw new Error('Profile analysis is required');
+    }
+
+    // Get user profile
+    const userProfile = await storageService.getUserProfile();
+    if (!userProfile) {
+      throw new Error('User profile not found');
+    }
+
+    // Use message service to generate
+    const { messageService } = await import('../services/message-service');
+    const messageDraft = await messageService.generateMessage(analysis, userProfile, {
+      tone,
+      length
+    });
+
+    return messageDraft;
+  }
+
+  private async handleChangeTone(message: Message): Promise<any> {
+    const { draftId, newTone } = message.payload;
+
+    if (!draftId || !newTone) {
+      throw new Error('Draft ID and new tone are required');
+    }
+
+    const { messageService } = await import('../services/message-service');
+    const updatedDraft = await messageService.changeTone(draftId, newTone);
+
+    return updatedDraft;
+  }
+
+  private async handleChangeLength(message: Message): Promise<any> {
+    const { draftId, newLength } = message.payload;
+
+    if (!draftId || !newLength) {
+      throw new Error('Draft ID and new length are required');
+    }
+
+    const { messageService } = await import('../services/message-service');
+    const updatedDraft = await messageService.changeLength(draftId, newLength);
+
+    return updatedDraft;
+  }
+
+  private async handleSaveEdit(message: Message): Promise<any> {
+    const { draftId, newBody } = message.payload;
+
+    if (!draftId || !newBody) {
+      throw new Error('Draft ID and new body are required');
+    }
+
+    const { messageService } = await import('../services/message-service');
+    const updatedDraft = await messageService.saveManualEdit(draftId, newBody);
+
+    return updatedDraft;
+  }
+
+  private async handleRecordOutreach(message: Message): Promise<any> {
+    const { draftId } = message.payload;
+
+    if (!draftId) {
+      throw new Error('Draft ID is required');
+    }
+
+    // Get the draft
+    const draft = await storageService.getMessageDraft(draftId);
+    if (!draft) {
+      throw new Error('Draft not found');
+    }
+
+    // Get target profile
+    const targetProfile = await storageService.getTargetProfile(draft.targetProfileId);
+    if (!targetProfile) {
+      throw new Error('Target profile not found');
+    }
+
+    // Calculate expiration based on subscription plan
+    const subscription = await storageService.getSubscriptionPlan();
+    let expiresAt: Date | null = null;
+
+    if (subscription?.plan === 'free') {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 5); // 5 days for free plan
+    }
+
+    // Record outreach history
+    const historyId = `history_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    await storageService.saveOutreachHistory({
+      id: historyId,
+      targetName: targetProfile.name,
+      targetLinkedinUrl: targetProfile.linkedinUrl,
+      contactedAt: new Date(),
+      expiresAt
+    });
+
+    return { recorded: true, historyId };
   }
 }
 

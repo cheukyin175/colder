@@ -8,9 +8,15 @@ import storageService from '../services/storage-service';
 import { logError } from '../utils/error-handlers';
 
 // Export to prevent "isolatedModules" error
-export {};
+export const startTime = Date.now();
 
 console.log('[Colder] Background worker loaded');
+console.log('[Colder] Environment check:', {
+  hasChrome: typeof chrome !== 'undefined',
+  hasRuntime: typeof chrome?.runtime !== 'undefined',
+  hasStorage: typeof chrome?.storage !== 'undefined',
+  version: chrome?.runtime?.getManifest?.()?.version
+});
 
 // --------------------------------------------------------------------------
 // Service Worker Lifecycle
@@ -48,24 +54,29 @@ chrome.runtime.onInstalled.addListener(async (details) => {
  * Initialize extension on first install
  */
 async function initializeExtension(): Promise<void> {
-  console.log('[Colder] Initializing extension...');
+  try {
+    console.log('[Colder] Initializing extension...');
 
-  // Check if user profile exists
-  const profile = await storageService.getUserProfile();
+    // Check if user profile exists
+    const profile = await storageService.getUserProfile();
 
-  if (!profile) {
-    console.log('[Colder] No user profile found - will prompt for setup');
+    if (!profile) {
+      console.log('[Colder] No user profile found - will prompt for setup');
+    }
+
+    // Initialize settings with defaults
+    const settings = await storageService.getSettings();
+    console.log('[Colder] Settings initialized:', {
+      hasApiKey: !!settings.openrouterApiKey,
+      theme: settings.theme,
+      model: settings.openrouterModel
+    });
+
+    console.log('[Colder] Extension initialization complete');
+  } catch (error) {
+    console.error('[Colder] ❌ Initialization failed:', error);
+    throw error;
   }
-
-  // Initialize settings with defaults
-  const settings = await storageService.getSettings();
-  console.log('[Colder] Settings initialized:', {
-    hasApiKey: !!settings.openrouterApiKey,
-    theme: settings.theme,
-    model: settings.openrouterModel
-  });
-
-  console.log('[Colder] Extension initialization complete');
 }
 
 // --------------------------------------------------------------------------
@@ -189,7 +200,16 @@ chrome.tabs.onRemoved.addListener(async () => {
 // --------------------------------------------------------------------------
 
 // Set up the message listener from our message handler
-setupMessageListener();
+try {
+  console.log('[Colder] Setting up message listener...');
+  setupMessageListener();
+  console.log('[Colder] ✓ Message listener ready');
+} catch (error) {
+  console.error('[Colder] ❌ Failed to setup message listener:', error);
+  logError(error instanceof Error ? error : new Error(String(error)), {
+    task: 'setupMessageListener'
+  });
+}
 
 // --------------------------------------------------------------------------
 // Context Menu (Future Feature)

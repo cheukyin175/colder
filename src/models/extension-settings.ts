@@ -12,6 +12,14 @@ export interface ExtensionSettings {
   gmailConnected: boolean;
   gmailOAuthToken: string | null;    // Stored in chrome.storage.local for security
 
+  // User Profile (for message personalization)
+  userName: string;
+  userRole: string;
+  userCompany: string;
+  userBackground: string;
+  userValueProposition: string;
+  userOutreachObjectives: string;
+
   // UI Preferences
   theme: Theme;
   notificationsEnabled: boolean;
@@ -33,10 +41,16 @@ export interface ExtensionSettings {
  */
 export function createDefaultSettings(): ExtensionSettings {
   return {
-    openrouterApiKey: null,
+    openrouterApiKey: '',
     openrouterModel: DEFAULTS.model,
     gmailConnected: false,
     gmailOAuthToken: null,
+    userName: '',
+    userRole: '',
+    userCompany: '',
+    userBackground: '',
+    userValueProposition: '',
+    userOutreachObjectives: '',
     theme: DEFAULTS.theme,
     notificationsEnabled: true,
     yoloModeEnabled: false,
@@ -112,6 +126,26 @@ export function areSettingsComplete(settings: ExtensionSettings): {
 
   if (!settings.openrouterModel || !isValidModel(settings.openrouterModel)) {
     missingFields.push('Valid AI model selection');
+  }
+
+  if (!settings.userName) {
+    missingFields.push('Your name');
+  }
+
+  if (!settings.userRole) {
+    missingFields.push('Your role');
+  }
+
+  if (!settings.userCompany) {
+    missingFields.push('Your company');
+  }
+
+  if (!settings.userBackground) {
+    missingFields.push('Professional background');
+  }
+
+  if (!settings.userValueProposition) {
+    missingFields.push('Value proposition');
   }
 
   return {

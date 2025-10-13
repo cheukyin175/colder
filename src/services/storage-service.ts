@@ -115,16 +115,28 @@ class StorageServiceImpl {
    */
   async getSettings(): Promise<ExtensionSettings> {
     try {
+      console.log('[StorageService] Getting settings with key:', MODEL_STORAGE_KEYS.extensionSettings);
       const result = await chrome.storage.sync.get(MODEL_STORAGE_KEYS.extensionSettings);
+      console.log('[StorageService] Raw result from storage:', result);
+
       const settings = result[MODEL_STORAGE_KEYS.extensionSettings];
+      console.log('[StorageService] Extracted settings:', settings);
 
       if (!settings) {
+        console.log('[StorageService] No settings found, returning defaults');
         // Return default settings if not set
         return createDefaultSettings();
       }
 
+      console.log('[StorageService] Returning settings:', {
+        hasApiKey: !!settings.openrouterApiKey,
+        userName: settings.userName,
+        userRole: settings.userRole
+      });
+
       return settings;
     } catch (error) {
+      console.error('[StorageService] Error getting settings:', error);
       handleStorageError(error);
     }
   }

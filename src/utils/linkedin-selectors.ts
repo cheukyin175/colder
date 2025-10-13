@@ -1,68 +1,29 @@
 /**
- * LinkedIn Selectors Utility - Simplified for AI Prompt Generation
- * Focuses on extracting clean text content rather than perfect structure
+ * LinkedIn Selectors Utility
+ * A collection of functions to extract structured information from a LinkedIn profile page.
+ * These selectors are subject to change with LinkedIn's UI updates and may need maintenance.
  */
 
 /**
- * Extract clean text from an element, filtering out UI elements
- */
-function extractCleanText(element: Element | null): string {
-  if (!element) return '';
-
-  // Get all text content
-  const text = element.textContent?.trim() || '';
-
-  // Filter out common UI elements and clean up
-  const uiPatterns = [
-    /^View .+ profile$/,
-    /^Message$/,
-    /^Connect$/,
-    /^Follow$/,
-    /^More$/,
-    /^Show all \d+/,
-    /^\d+ connection/,
-    /^Logo$/
-  ];
-
-  // Remove UI patterns
-  let cleanText = text;
-  uiPatterns.forEach(pattern => {
-    cleanText = cleanText.replace(pattern, '');
-  });
-
-  // Clean up multiple spaces and newlines
-  cleanText = cleanText.replace(/\s+/g, ' ').trim();
-
-  return cleanText;
-}
-
-/**
- * Get text content from a section - comprehensive extraction
+ * A robust function to get all visible text from a given section element.
+ * @param sectionId The ID of the section to extract text from (e.g., 'about', 'experience').
+ * @returns A string containing all the cleaned text from that section.
  */
 function getSectionText(sectionId: string): string {
+  // LinkedIn sections are often identifiable by a direct ID or an element with that ID inside.
   const section = document.querySelector(`section:has(#${sectionId})`);
   if (!section) return '';
 
-  // Get all text content, not just spans
-  const textElements = section.querySelectorAll('span[aria-hidden="true"], span:not([aria-hidden]), div[dir="ltr"], p, h1, h2, h3, h4, h5, h6');
   const texts: string[] = [];
-
+  // Query for all common text-containing elements.
+  const textElements = section.querySelectorAll('span[aria-hidden="true"], span:not([aria-hidden]), div[dir="ltr"], p, h1, h2, h3, h4, h5, h6');
+  
   textElements.forEach(elem => {
     const text = elem.textContent?.trim();
     if (text && text.length > 1) {
-      // Skip if already included (avoid duplicates)
-      const isAlreadyIncluded = texts.some(existingText =>
-        existingText.includes(text) || text.includes(existingText)
-      );
-
+      const isAlreadyIncluded = texts.some(existingText => existingText.includes(text));
       if (!isAlreadyIncluded) {
-        // Skip common UI elements
-        const uiElements = ['View', 'Message', 'Connect', 'Logo', 'Show all', 'see more', 'see less'];
-        const isUIElement = uiElements.some(ui => text === ui || text.startsWith(`${ui} `));
-
-        if (!isUIElement) {
-          texts.push(text);
-        }
+        texts.push(text);
       }
     }
   });
@@ -71,178 +32,114 @@ function getSectionText(sectionId: string): string {
 }
 
 /**
- * Extract name from LinkedIn profile
+ * Extracts the profile name.
+ * It tries multiple selectors to account for different versions of the LinkedIn UI.
  */
 export function extractName(): string | null {
-  // Try multiple approaches
   const selectors = [
-    'h1.text-heading-xlarge',
-    '.pv-text-details__left-panel h1',
-    'main section:first-of-type h1',
-    'h1'
+    'h1.text-heading-xlarge', // Standard profile name selector
+    '.pv-text-details__left-panel h1', // Older profile layout
+    'main section:first-of-type h1', // A more generic selector for the main content area
+    'h1' // Last resort: the first h1 on the page
   ];
 
   for (const selector of selectors) {
     const element = document.querySelector(selector);
     if (element) {
       const text = element.textContent?.trim();
-      if (text && text.length > 1 && text.length < 100) {
-        return text;
-      }
+      if (text && text.length > 1 && text.length < 100) return text;
     }
   }
-
   return null;
 }
 
 /**
- * Extract job title/headline from LinkedIn profile
+ * Extracts the job title and headline.
  */
 export function extractJobTitle(): string | null {
   const selectors = [
-    '.text-body-medium.break-words',
-    '.pv-text-details__left-panel .text-body-medium',
-    'main section:first-of-type .text-body-medium'
+    '.text-body-medium.break-words', // Standard headline selector
+    '.pv-text-details__left-panel .text-body-medium', // Older layout
+    'main section:first-of-type .text-body-medium' // Generic selector
   ];
 
   for (const selector of selectors) {
     const element = document.querySelector(selector);
     if (element) {
       const text = element.textContent?.trim();
-      if (text && text.length > 5) {
-        return text;
-      }
+      if (text && text.length > 5) return text;
     }
   }
-
   return null;
 }
 
 /**
- * Extract current company - from headline or first experience
+ * Extracts the current company from the headline.
  */
 export function extractCompany(): string | null {
-  // First try to get from the headline which often has "Title at Company" format
   const headline = extractJobTitle();
   if (headline && headline.includes(' at ')) {
     const parts = headline.split(' at ');
-    if (parts.length >= 2) {
-      return parts[parts.length - 1].trim();
-    }
+    return parts[parts.length - 1].trim();
   }
-
-  // If not in headline, just return null and let the experience section handle it
-  // We don't want to incorrectly parse job titles as companies
   return null;
 }
 
 /**
- * Extract work experience - raw text for AI
+ * Extracts the entire work experience section as formatted text.
  */
 export function extractWorkExperience(): string {
   const expSection = document.querySelector('section:has(#experience)');
-  if (!expSection) {
-    return 'No work experience information available.';
-  }
+  if (!expSection) return 'No work experience information available.';
 
-  // Get all list items in experience section
   const experienceItems = expSection.querySelectorAll('li');
   const experienceTexts: string[] = [];
 
-  experienceItems.forEach((item, index) => {
-    // Skip nested items (like skill tags)
-    const parentLi = item.parentElement?.closest('li');
-    if (parentLi && expSection.contains(parentLi)) {
-      return; // Skip if this is a nested li
-    }
-
-    // Get all text from this experience item
-    const textContent = item.textContent?.trim();
+  experienceItems.forEach(item => {
+    const textContent = item.textContent?.trim().replace(/\s+/g, ' ').trim();
     if (textContent && textContent.length > 20) {
-      // Clean up the text - remove excessive whitespace
-      const cleaned = textContent.replace(/\s+/g, ' ').trim();
-
-      // Skip if it's just UI elements
-      if (!cleaned.includes('Logo') && !cleaned.startsWith('View') && !cleaned.startsWith('Message')) {
-        experienceTexts.push(cleaned);
-      }
+      experienceTexts.push(textContent);
     }
   });
 
-  // If no items found, fallback to section text
-  if (experienceTexts.length === 0) {
-    return getSectionText('experience') || 'No work experience information available.';
-  }
-
-  // Join experiences with clear separation
-  return experienceTexts.join('\n\n---\n\n');
+  return experienceTexts.length > 0 ? experienceTexts.join('\n\n---\n\n') : 'No work experience information available.';
 }
 
 /**
- * Extract education - raw text for AI
+ * Extracts the education section as formatted text.
  */
 export function extractEducation(): string {
   const eduSection = document.querySelector('section:has(#education)');
-  if (!eduSection) {
-    return 'No education information available.';
-  }
+  if (!eduSection) return 'No education information available.';
 
-  // Get all list items in education section
   const educationItems = eduSection.querySelectorAll('li');
   const educationTexts: string[] = [];
 
-  educationItems.forEach((item) => {
-    // Skip nested items
-    const parentLi = item.parentElement?.closest('li');
-    if (parentLi && eduSection.contains(parentLi)) {
-      return;
-    }
-
-    // Get all text from this education item
-    const textContent = item.textContent?.trim();
+  educationItems.forEach(item => {
+    const textContent = item.textContent?.trim().replace(/\s+/g, ' ').trim();
     if (textContent && textContent.length > 20) {
-      // Clean up the text
-      const cleaned = textContent.replace(/\s+/g, ' ').trim();
-
-      // Skip UI elements
-      if (!cleaned.includes('Logo') && !cleaned.startsWith('View')) {
-        educationTexts.push(cleaned);
-      }
+      educationTexts.push(textContent);
     }
   });
 
-  // If no items found, fallback to section text
-  if (educationTexts.length === 0) {
-    return getSectionText('education') || 'No education information available.';
-  }
-
-  // Join education entries with clear separation
-  return educationTexts.join('\n\n');
+  return educationTexts.length > 0 ? educationTexts.join('\n\n') : 'No education information available.';
 }
 
 /**
- * Extract skills - simplified for AI
+ * Extracts a list of skills.
  */
 export function extractSkills(): string[] {
-  const skillsSection = document.querySelector('section:has(#skills)') ||
-                       document.querySelector('section:has(.skills-section)');
-
+  const skillsSection = document.querySelector('section:has(#skills)');
   if (!skillsSection) return [];
 
   const skills: string[] = [];
+  // Skills are often within span elements with this specific attribute.
   const skillElements = skillsSection.querySelectorAll('span[aria-hidden="true"]');
 
   skillElements.forEach(elem => {
     const text = elem.textContent?.trim();
-
-    // Filter for reasonable skill names
-    if (text && text.length > 2 && text.length < 50 && !text.includes('·')) {
-      // Skip if it's a number or common UI text
-      if (!/^\d+$/.test(text) && !text.includes('endorsement') && !text.includes('View')) {
-        if (!skills.includes(text)) {
-          skills.push(text);
-        }
-      }
+    if (text && text.length > 1 && !skills.includes(text)) {
+      skills.push(text);
     }
   });
 
@@ -250,72 +147,20 @@ export function extractSkills(): string[] {
 }
 
 /**
- * Extract recent posts/activity - get full content
+ * Extracts recent posts and activity.
  */
 export function extractRecentPosts(): string {
-  // Try multiple sections where activity might be
-  const activitySection = document.querySelector('section:has(#activity)') ||
-                         document.querySelector('section:has(#content_main)') ||
-                         document.querySelector('[aria-label*="Activity"]');
+  const activitySection = document.querySelector('section:has(#activity)');
+  if (!activitySection) return 'No recent activity found.';
 
-  if (!activitySection) {
-    // Try to get from recent activity feed
-    const feedSection = document.querySelector('.pv-recent-activity-section') ||
-                       document.querySelector('.profile-creator-shared-feed-update__container');
-
-    if (!feedSection) {
-      return 'No recent activity found.';
-    }
-
-    // Extract from feed section
-    const posts = feedSection.querySelectorAll('article, .feed-shared-update-v2, .occludable-update');
-    const postTexts: string[] = [];
-
-    posts.forEach((post, index) => {
-      if (index >= 5) return; // Limit to 5 posts
-
-      // Get all text content from the post
-      const textElements = post.querySelectorAll('span[aria-hidden="true"], span[dir="ltr"], .feed-shared-text');
-      const postContent: string[] = [];
-
-      textElements.forEach(elem => {
-        const text = elem.textContent?.trim();
-        if (text && text.length > 10 && !postContent.includes(text)) {
-          postContent.push(text);
-        }
-      });
-
-      if (postContent.length > 0) {
-        postTexts.push(`Post ${index + 1}:\n${postContent.join('\n')}`);
-      }
-    });
-
-    return postTexts.length > 0 ? postTexts.join('\n\n') : 'No recent posts found.';
-  }
-
-  // Get all text from activity section
-  const activityItems = activitySection.querySelectorAll('article, li, .feed-shared-update-v2');
+  const activityItems = activitySection.querySelectorAll('li');
   const activities: string[] = [];
 
   activityItems.forEach((item, index) => {
     if (index >= 5) return; // Limit to 5 activities
-
-    // Get text content
-    const textElements = item.querySelectorAll('span[aria-hidden="true"], span:not([aria-hidden])');
-    const itemTexts: string[] = [];
-
-    textElements.forEach(elem => {
-      const text = elem.textContent?.trim();
-      if (text && text.length > 10 && !itemTexts.includes(text)) {
-        // Skip UI elements
-        if (!text.includes('View') && !text.includes('Message') && !text.includes('Connect')) {
-          itemTexts.push(text);
-        }
-      }
-    });
-
-    if (itemTexts.length > 0) {
-      activities.push(`Activity ${index + 1}:\n${itemTexts.join('\n')}`);
+    const textContent = item.textContent?.trim().replace(/\s+/g, ' ').trim();
+    if (textContent) {
+      activities.push(textContent);
     }
   });
 
@@ -323,43 +168,32 @@ export function extractRecentPosts(): string {
 }
 
 /**
- * Extract About/Summary section
+ * Extracts the "About" section.
  */
 export function extractAbout(): string {
   const aboutText = getSectionText('about');
-
-  if (!aboutText) {
-    return 'No about section available.';
-  }
-
-  // Clean up the text
-  const lines = aboutText.split('\n');
-  const cleanedLines: string[] = [];
-
-  lines.forEach(line => {
-    if (line.length < 3) return;
-    if (line === 'About') return; // Skip section header
-    cleanedLines.push(line);
-  });
-
-  return cleanedLines.join('\n');
+  return aboutText || 'No about section available.';
 }
 
 /**
- * Extract all profile information as a structured text for AI
+ * Gets the canonical LinkedIn profile URL.
  */
-export function extractProfileForAI(): {
-  name: string | null;
-  headline: string | null;
-  company: string | null;
-  about: string;
-  experience: string;
-  education: string;
-  skills: string[];
-  activity: string;
-  profileUrl: string;
-} {
-  return {
+export function getProfileUrl(): string {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  let cleanUrl = url.toString();
+  if (cleanUrl.endsWith('/')) {
+    cleanUrl = cleanUrl.slice(0, -1);
+  }
+  return cleanUrl;
+}
+
+/**
+ * Gathers all extracted text into a single string formatted for an AI prompt.
+ */
+export function formatProfileForPrompt(): string {
+  const profile = {
     name: extractName(),
     headline: extractJobTitle(),
     company: extractCompany(),
@@ -368,139 +202,22 @@ export function extractProfileForAI(): {
     education: extractEducation(),
     skills: extractSkills(),
     activity: extractRecentPosts(),
-    profileUrl: getProfileUrl()
+    profileUrl: getProfileUrl(),
   };
-}
-
-/**
- * Check if current page is a LinkedIn profile page
- */
-export function isLinkedInProfilePage(): boolean {
-  // Check URL pattern
-  const urlPatterns = [
-    /linkedin\.com\/in\/[\w-]+\/?$/,
-    /linkedin\.com\/in\/[\w-]+\/$/,
-    /linkedin\.com\/profile\/view/
-  ];
-
-  const currentUrl = window.location.href;
-  const isProfileUrl = urlPatterns.some(pattern => pattern.test(currentUrl));
-
-  if (!isProfileUrl) return false;
-
-  // Additional check: verify profile elements exist
-  const profileIndicators = [
-    'section.profile',
-    'main.scaffold-layout__main',
-    '[data-view-name*="profile"]',
-    '#profile-content'
-  ];
-
-  return profileIndicators.some(selector => {
-    try {
-      return document.querySelector(selector) !== null;
-    } catch {
-      return false;
-    }
-  });
-}
-
-/**
- * Extract LinkedIn profile URL from current page
- */
-export function getProfileUrl(): string {
-  // Clean URL of query parameters and trailing slashes
-  const url = new URL(window.location.href);
-
-  // Remove query parameters and hash
-  url.search = '';
-  url.hash = '';
-
-  // Remove trailing slash
-  let cleanUrl = url.toString();
-  if (cleanUrl.endsWith('/')) {
-    cleanUrl = cleanUrl.slice(0, -1);
-  }
-
-  return cleanUrl;
-}
-
-/**
- * Wait for profile content to load
- */
-export async function waitForProfileLoad(timeout = 10000): Promise<boolean> {
-  const startTime = Date.now();
-
-  return new Promise((resolve) => {
-    const checkInterval = setInterval(() => {
-      // Check if key profile elements are loaded
-      const hasName = extractName() !== null;
-
-      if (hasName || Date.now() - startTime > timeout) {
-        clearInterval(checkInterval);
-        resolve(hasName);
-      }
-    }, 500);
-  });
-}
-
-/**
- * Format profile data for AI prompt
- */
-export function formatProfileForPrompt(): string {
-  const profile = extractProfileForAI();
 
   const sections: string[] = [];
-
-  // Add header
   sections.push('=== LINKEDIN PROFILE DATA ===\n');
-
-  // Basic information
-  if (profile.name) {
-    sections.push(`Name: ${profile.name}`);
-  }
-
-  if (profile.headline) {
-    sections.push(`Current Role/Headline: ${profile.headline}`);
-  }
-
-  if (profile.company) {
-    sections.push(`Current Company: ${profile.company}`);
-  }
-
+  if (profile.name) sections.push(`Name: ${profile.name}`);
+  if (profile.headline) sections.push(`Current Role/Headline: ${profile.headline}`);
+  if (profile.company) sections.push(`Current Company: ${profile.company}`);
   sections.push(`LinkedIn URL: ${profile.profileUrl}`);
 
-  // About section
-  if (profile.about && profile.about !== 'No about section available.') {
-    sections.push('\n--- ABOUT ---');
-    sections.push(profile.about);
-  }
-
-  // Work experience
-  if (profile.experience && profile.experience !== 'No work experience information available.') {
-    sections.push('\n--- WORK EXPERIENCE ---');
-    sections.push(profile.experience);
-  }
-
-  // Education
-  if (profile.education && profile.education !== 'No education information available.') {
-    sections.push('\n--- EDUCATION ---');
-    sections.push(profile.education);
-  }
-
-  // Skills
-  if (profile.skills.length > 0) {
-    sections.push('\n--- SKILLS ---');
-    sections.push(profile.skills.join(', '));
-  }
-
-  // Recent activity/posts
-  if (profile.activity && profile.activity !== 'No recent activity found.') {
-    sections.push('\n--- RECENT ACTIVITY & POSTS ---');
-    sections.push(profile.activity);
-  }
+  if (profile.about !== 'No about section available.') sections.push('\n--- ABOUT ---\n' + profile.about);
+  if (profile.experience !== 'No work experience information available.') sections.push('\n--- WORK EXPERIENCE ---\n' + profile.experience);
+  if (profile.education !== 'No education information available.') sections.push('\n--- EDUCATION ---\n' + profile.education);
+  if (profile.skills.length > 0) sections.push('\n--- SKILLS ---\n' + profile.skills.join(', '));
+  if (profile.activity !== 'No recent activity found.') sections.push('\n--- RECENT ACTIVITY & POSTS ---\n' + profile.activity);
 
   sections.push('\n=== END OF PROFILE ===');
-
   return sections.join('\n');
 }

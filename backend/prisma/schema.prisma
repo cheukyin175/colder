@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum for the different subscription plans
+enum Plan {
+  FREE
+  PRO
+}
+
+// User model to store user information and their subscription status
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  googleId  String   @unique
+  credits   Int      @default(20)
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // User-configurable settings
+  userName              String? 
+  userRole              String?
+  userCompany           String?
+  userBackground        String?
+  userValueProposition  String?
+  userOutreachObjectives String? @default("General Connection")
+
+  messages Message[] // Relation to the messages a user has generated
+  generatedProfiles GeneratedProfile[] // Relation to the profiles a user has generated for
+}
+
+// Model to store generated profiles for paid users
+model GeneratedProfile {
+  id        String   @id @default(cuid())
+  linkedinUrl String
+  name      String
+  basicInformation Json?
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@unique([userId, linkedinUrl]) // A user can only save a specific profile once
+}
+
+// Model to store the history of generated messages
+model Message {
+  id               String   @id @default(cuid())
+  body             String
+  targetProfileUrl String
+  createdAt        DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+}

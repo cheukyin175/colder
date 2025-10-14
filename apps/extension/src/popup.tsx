@@ -3,6 +3,8 @@ import type { MessageDraft } from "./models/message-draft";
 import type { ExtensionSettings } from "./models/extension-settings";
 import { createDefaultSettings } from "./models/extension-settings";
 import { supabase } from "./lib/supabase";
+import { CreditStatus } from "./components/CreditStatus";
+import { UpgradeModal } from "./components/UpgradeModal";
 import "./styles/global.css";
 
 // Define the different views and states for the UI
@@ -42,6 +44,10 @@ function IndexPopup() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Payment state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userPlan, setUserPlan] = useState<'FREE' | 'PRO'>('FREE');
 
   // --- HOOKS ---
 
@@ -84,12 +90,22 @@ function IndexPopup() {
     const loadSettings = async () => {
       if (authState === "authenticated" && jwt) {
         try {
-          const response = await fetch(`${BACKEND_URL}/settings`, {
+          // Load settings
+          const settingsResponse = await fetch(`${BACKEND_URL}/settings`, {
             headers: { Authorization: `Bearer ${jwt}` },
           });
-          if (!response.ok) throw new Error("Failed to fetch settings");
-          const backendSettings = await response.json();
+          if (!settingsResponse.ok) throw new Error("Failed to fetch settings");
+          const backendSettings = await settingsResponse.json();
           setSettings(backendSettings);
+
+          // Load credit status to get user plan
+          const creditResponse = await fetch(`${BACKEND_URL}/credits/status`, {
+            headers: { Authorization: `Bearer ${jwt}` },
+          });
+          if (creditResponse.ok) {
+            const creditData = await creditResponse.json();
+            setUserPlan(creditData.plan);
+          }
         } catch (e: any) {
           setError(e.message);
         }
@@ -348,6 +364,36 @@ function IndexPopup() {
   const renderSettings = () => (
     <div className="p-4 space-y-4">
       <h2 className="text-lg font-bold">Settings</h2>
+
+      {/* Subscription Status */}
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">Subscription</span>
+          {userPlan === 'PRO' && (
+            <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold rounded-full">
+              PRO
+            </span>
+          )}
+        </div>
+        <div className="text-sm text-gray-600">
+          {userPlan === 'FREE' ? (
+            <>Free Plan (5 messages/day)</>
+          ) : (
+            <>Pro Plan (500 messages/month)</>
+          )}
+        </div>
+        <button
+          onClick={() => setShowUpgradeModal(true)}
+          className={`mt-2 w-full p-2 rounded-md text-sm font-medium ${
+            userPlan === 'FREE'
+              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          {userPlan === 'FREE' ? 'Upgrade to Pro' : 'Manage Subscription'}
+        </button>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700">Your Name</label>
         <input
@@ -375,8 +421,8 @@ function IndexPopup() {
           rows={3}
         />
       </div>
-      <button 
-        onClick={handleSaveSettings} 
+      <button
+        onClick={handleSaveSettings}
         disabled={isSaving}
         className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
       >
@@ -566,13 +612,18 @@ function IndexPopup() {
 
   const renderAuthenticatedApp = () => (
     <div className="w-[400px] bg-gray-50 font-sans">
+       <CreditStatus
+         jwt={jwt}
+         backendUrl={BACKEND_URL}
+         onUpgradeClick={() => setShowUpgradeModal(true)}
+       />
        <div className="flex border-b bg-white">
-         <button 
+         <button
            onClick={() => setActiveView("generate")}
            className={`flex-1 p-3 text-center font-semibold text-sm transition-colors ${activeView === 'generate' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>
            Generate
          </button>
-         <button 
+         <button
            onClick={() => setActiveView("settings")}
            className={`flex-1 p-3 text-center font-semibold text-sm transition-colors ${activeView === 'settings' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}>
            Settings
@@ -581,6 +632,13 @@ function IndexPopup() {
        <div className="bg-white shadow-inner min-h-[200px]">
          {activeView === "generate" ? renderGenerate() : renderSettings()}
        </div>
+       <UpgradeModal
+         jwt={jwt}
+         backendUrl={BACKEND_URL}
+         isOpen={showUpgradeModal}
+         onClose={() => setShowUpgradeModal(false)}
+         currentPlan={userPlan}
+       />
      </div>
   );
 

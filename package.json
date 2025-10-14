@@ -20,7 +20,10 @@
 		"prisma:generate": "pnpm --filter @colder/backend prisma:generate",
 		"prisma:migrate": "pnpm --filter @colder/backend prisma:migrate",
 		"prisma:studio": "pnpm --filter @colder/backend prisma:studio",
-		"prisma:push": "pnpm --filter @colder/backend prisma:push"
+		"prisma:push": "pnpm --filter @colder/backend prisma:push",
+		"deploy": "vercel --prod",
+		"deploy:preview": "vercel",
+		"vercel:build": "pnpm prisma:generate && pnpm build:backend"
 	},
 	"devDependencies": {
 		"typescript": "^5.7.2"

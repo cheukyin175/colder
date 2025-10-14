@@ -6,6 +6,7 @@ import { GenerateMessageDto } from './dto/generate-message.dto';
 import { profileAnalyzerAgent } from '../agents/profile-analyzer';
 import { messageGeneratorAgent } from '../agents/message-generator';
 import { messagePolisherAgent } from '../agents/message-polisher';
+import { CreditsService } from '../credits/credits.service';
 
 @Injectable()
 export class GenerateService {
@@ -15,6 +16,7 @@ export class GenerateService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private creditsService: CreditsService,
   ) {
     const apiKey = this.configService.get<string>('OPENROUTER_API_KEY');
     if (!apiKey) {
@@ -25,14 +27,17 @@ export class GenerateService {
   }
 
   async generateMessageForUser(userId: string, generateDto: GenerateMessageDto) {
+    // Check user credits first
+    const userCredits = await this.creditsService.getUserCredits(userId);
+
+    if (userCredits.credits <= 0) {
+      throw new UnauthorizedException(`You have no remaining credits. ${userCredits.plan === 'FREE' ? 'Upgrade to PRO for 500 messages per month!' : 'Your monthly credits will reset on ' + userCredits.nextResetTime?.toLocaleDateString()}`);
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
-    }
-
-    if (user.credits <= 0) {
-      throw new UnauthorizedException('You have no remaining credits.');
     }
 
     try {
@@ -81,25 +86,21 @@ export class GenerateService {
       );
 
       // Only deduct credits after successful generation
-      await this.prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: userId },
-          data: { credits: { decrement: 1 } },
-        });
+      await this.creditsService.deductCredits(userId, 1);
 
-        if (user.plan === Plan.PRO) {
-          await tx.generatedProfile.create({
-            data: {
-              userId,
-              linkedinUrl: targetProfile.linkedinUrl,
-              name: targetProfile.name,
-              basicInformation: {
-                headline: targetProfile.currentJobTitle,
-              },
+      // Save generated profile for PRO users
+      if (user.plan === Plan.PRO) {
+        await this.prisma.generatedProfile.create({
+          data: {
+            userId,
+            linkedinUrl: targetProfile.linkedinUrl,
+            name: targetProfile.name,
+            basicInformation: {
+              headline: targetProfile.currentJobTitle,
             },
-          });
-        }
-      });
+          },
+        });
+      }
 
       return messageDraft;
 
@@ -118,14 +119,17 @@ export class GenerateService {
       length?: 'short' | 'medium' | 'long';
     }
   ) {
+    // Check user credits first
+    const userCredits = await this.creditsService.getUserCredits(userId);
+
+    if (userCredits.credits <= 0) {
+      throw new UnauthorizedException(`You have no remaining credits. ${userCredits.plan === 'FREE' ? 'Upgrade to PRO for 500 messages per month!' : 'Your monthly credits will reset on ' + userCredits.nextResetTime?.toLocaleDateString()}`);
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
-    }
-
-    if (user.credits <= 0) {
-      throw new UnauthorizedException('You have no remaining credits.');
     }
 
     try {
@@ -142,10 +146,7 @@ export class GenerateService {
       );
 
       // Only deduct credits after successful polishing
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { credits: { decrement: 1 } },
-      });
+      await this.creditsService.deductCredits(userId, 1);
 
       return {
         body: polishedMessage.body,

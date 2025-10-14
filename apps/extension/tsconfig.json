@@ -13,6 +13,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./src/*"],
       "~*": ["./src/*"],
       "@colder/shared-types": ["../../packages/shared-types/src"]
     }

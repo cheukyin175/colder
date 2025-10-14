@@ -1,6 +1,6 @@
 import type { PlasmoCSConfig } from "plasmo";
 import { formatProfileForPrompt, extractName, extractJobTitle, extractCompany, getProfileUrl } from "../utils/linkedin-selectors";
-import type { TargetProfile } from "../models/target-profile";
+import type { TargetProfile } from "../types";
 
 export const config: PlasmoCSConfig = {
   matches: ["https://*.linkedin.com/*"],

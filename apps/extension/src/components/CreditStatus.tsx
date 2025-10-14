@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Crown, Zap } from 'lucide-react';
 
 interface CreditInfo {
   credits: number;
@@ -47,8 +48,8 @@ export function CreditStatus({ jwt, backendUrl, onUpgradeClick }: CreditStatusPr
 
   if (loading || !creditInfo) {
     return (
-      <div className="px-4 py-2 bg-gray-100 border-b animate-pulse">
-        <div className="h-4 bg-gray-300 rounded w-32"></div>
+      <div className="flex items-center gap-2">
+        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
       </div>
     );
   }
@@ -61,11 +62,11 @@ export function CreditStatus({ jwt, backendUrl, onUpgradeClick }: CreditStatusPr
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays > 0) {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+      return `${diffDays}d`;
     } else if (diffHours > 0) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+      return `${diffHours}h`;
     } else {
-      return 'soon';
+      return '<1h';
     }
   };
 
@@ -73,76 +74,29 @@ export function CreditStatus({ jwt, backendUrl, onUpgradeClick }: CreditStatusPr
   const isLowCredits = creditInfo.credits <= 2 && creditInfo.plan === 'FREE';
 
   return (
-    <div className={`px-4 py-3 border-b ${isLowCredits ? 'bg-yellow-50' : 'bg-gray-50'}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="text-sm">
-            <span className="font-medium text-gray-700">Credits: </span>
-            <span className={`font-bold ${creditInfo.credits === 0 ? 'text-red-600' : 'text-gray-900'}`}>
-              {creditInfo.credits}/{creditInfo.maxCredits}
-            </span>
-          </div>
-          {creditInfo.plan === 'PRO' && (
-            <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-semibold rounded-full">
-              PRO
-            </span>
-          )}
-        </div>
-
-        {creditInfo.plan === 'FREE' && (
-          <button
-            onClick={onUpgradeClick}
-            className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full hover:bg-blue-700 transition-colors"
-          >
-            Upgrade to PRO
-          </button>
-        )}
+    <div className="flex items-center gap-3">
+      {/* Credit Display */}
+      <div className="flex items-center gap-1.5">
+        <Zap className="h-4 w-4 text-gray-700" />
+        <span className="text-sm font-medium text-gray-900">
+          {creditInfo.credits}
+          <span className="text-gray-500">/{creditInfo.maxCredits}</span>
+        </span>
       </div>
 
-      {/* Credit Bar */}
-      <div className="mt-2">
-        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${
-              creditInfo.credits === 0
-                ? 'bg-red-500'
-                : creditInfo.credits <= 2 && creditInfo.plan === 'FREE'
-                ? 'bg-yellow-500'
-                : 'bg-green-500'
-            }`}
-            style={{ width: `${creditPercentage}%` }}
-          />
+      {/* Plan Badge */}
+      {creditInfo.plan === 'PRO' ? (
+        <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-900 text-white text-xs font-semibold rounded-full">
+          <Crown className="h-3 w-3" />
+          PRO
         </div>
-      </div>
-
-      {/* Reset Time */}
-      <div className="mt-1 text-xs text-gray-500">
-        {creditInfo.plan === 'FREE' ? (
-          <>Daily reset in {formatResetTime(creditInfo.nextResetTime)}</>
-        ) : (
-          <>Monthly reset in {formatResetTime(creditInfo.nextResetTime)}</>
-        )}
-      </div>
-
-      {/* Warning Messages */}
-      {creditInfo.credits === 0 && (
-        <div className="mt-2 p-2 bg-red-100 rounded-md">
-          <p className="text-xs text-red-700">
-            {creditInfo.plan === 'FREE' ? (
-              <>No credits remaining. Upgrade to PRO for 500 messages/month or wait for daily reset.</>
-            ) : (
-              <>No credits remaining. Your credits will reset {formatResetTime(creditInfo.nextResetTime)}.</>
-            )}
-          </p>
-        </div>
-      )}
-
-      {isLowCredits && (
-        <div className="mt-2 p-2 bg-yellow-100 rounded-md">
-          <p className="text-xs text-yellow-700">
-            Running low on credits! Consider upgrading to PRO for 500 messages per month.
-          </p>
-        </div>
+      ) : (
+        <button
+          onClick={onUpgradeClick}
+          className="text-xs font-medium text-gray-900 hover:text-gray-700 underline underline-offset-2 transition-colors"
+        >
+          Upgrade
+        </button>
       )}
     </div>
   );

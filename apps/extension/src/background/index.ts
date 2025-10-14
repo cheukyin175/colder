@@ -4,7 +4,6 @@
  */
 
 import { setupMessageListener } from './message-handler';
-import storageService from '../services/storage-service';
 import { logError } from '../utils/error-handlers';
 
 // Export to prevent "isolatedModules" error
@@ -28,122 +27,14 @@ console.log('[Colder] Environment check:', {
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[Colder] Extension installed/updated:', details.reason);
 
-  try {
-    // Initialize default settings on first install
-    if (details.reason === 'install') {
-      await initializeExtension();
-    }
+  if (details.reason === 'install') {
+    console.log('[Colder] Extension installed - user will be prompted to sign in');
+  }
 
-    // Handle extension update
-    if (details.reason === 'update') {
-      console.log('[Colder] Updated from version:', details.previousVersion);
-      // Future: Run migration scripts if needed
-    }
-
-    // Set up storage cleanup alarm (runs daily)
-    await setupCleanupAlarm();
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      event: 'onInstalled',
-      reason: details.reason
-    });
+  if (details.reason === 'update') {
+    console.log('[Colder] Updated from version:', details.previousVersion);
   }
 });
-
-/**
- * Initialize extension on first install
- */
-async function initializeExtension(): Promise<void> {
-  try {
-    console.log('[Colder] Initializing extension...');
-
-    // Check if user profile exists
-    const profile = await storageService.getUserProfile();
-
-    if (!profile) {
-      console.log('[Colder] No user profile found - will prompt for setup');
-    }
-
-    // Initialize settings with defaults
-    const settings = await storageService.getSettings();
-    console.log('[Colder] Settings initialized:', {
-      hasApiKey: !!settings.openrouterApiKey,
-      theme: settings.theme,
-      model: settings.openrouterModel
-    });
-
-    console.log('[Colder] Extension initialization complete');
-  } catch (error) {
-    console.error('[Colder] ❌ Initialization failed:', error);
-    throw error;
-  }
-}
-
-// --------------------------------------------------------------------------
-// Storage Cleanup
-// --------------------------------------------------------------------------
-
-/**
- * Set up daily cleanup alarm
- */
-async function setupCleanupAlarm(): Promise<void> {
-  const alarmName = 'storage-cleanup';
-
-  // Clear existing alarm if any
-  await chrome.alarms.clear(alarmName);
-
-  // Create alarm that runs every 24 hours
-  chrome.alarms.create(alarmName, {
-    periodInMinutes: 24 * 60, // 24 hours
-    delayInMinutes: 1 // Start 1 minute after setup
-  });
-
-  console.log('[Colder] Storage cleanup alarm scheduled');
-}
-
-/**
- * Handle alarms
- */
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  console.log('[Colder] Alarm triggered:', alarm.name);
-
-  if (alarm.name === 'storage-cleanup') {
-    await runStorageCleanup();
-  }
-});
-
-/**
- * Run storage cleanup tasks
- */
-async function runStorageCleanup(): Promise<void> {
-  try {
-    console.log('[Colder] Running storage cleanup...');
-
-    // Get storage usage before cleanup
-    const usageBefore = await storageService.getStorageUsage();
-    console.log('[Colder] Storage usage before cleanup:', {
-      sync: `${usageBefore.sync.percentage}%`,
-      local: `${usageBefore.local.percentage}%`
-    });
-
-    // TODO: In future phases, implement cleanup for:
-    // - Expired target profiles (> 24 hours)
-    // - Expired profile analyses (> 24 hours)
-    // - Expired message drafts (> 7 days)
-    // - Expired outreach history (free plan, > 5 days)
-
-    // Get storage usage after cleanup
-    const usageAfter = await storageService.getStorageUsage();
-    console.log('[Colder] Storage usage after cleanup:', {
-      sync: `${usageAfter.sync.percentage}%`,
-      local: `${usageAfter.local.percentage}%`
-    });
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      task: 'storage-cleanup'
-    });
-  }
-}
 
 // --------------------------------------------------------------------------
 // Service Worker Keep-Alive
@@ -210,6 +101,21 @@ try {
     task: 'setupMessageListener'
   });
 }
+
+// --------------------------------------------------------------------------
+// Side Panel Action
+// --------------------------------------------------------------------------
+
+/**
+ * Open side panel when extension icon is clicked
+ */
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id) {
+    chrome.sidePanel.open({ tabId: tab.id }).catch((error) => {
+      console.error('[Colder] Failed to open side panel:', error);
+    });
+  }
+});
 
 // --------------------------------------------------------------------------
 // Context Menu (Future Feature)

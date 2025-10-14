@@ -38,8 +38,12 @@ function getSectionText(sectionId: string): string {
 export function extractName(): string | null {
   const selectors = [
     'h1.text-heading-xlarge', // Standard profile name selector
+    'h1[class*="text-heading"]', // Any h1 with text-heading class
     '.pv-text-details__left-panel h1', // Older profile layout
+    'div[class*="pv-top-card"] h1', // Top card area
     'main section:first-of-type h1', // A more generic selector for the main content area
+    '[data-generated-suggestion-target] h1', // New LinkedIn layout
+    'main h1:first-of-type', // First h1 in main
     'h1' // Last resort: the first h1 on the page
   ];
 
@@ -47,9 +51,23 @@ export function extractName(): string | null {
     const element = document.querySelector(selector);
     if (element) {
       const text = element.textContent?.trim();
-      if (text && text.length > 1 && text.length < 100) return text;
+      // Name should be reasonable length and not contain common UI text
+      if (text && text.length > 1 && text.length < 100 &&
+          !text.toLowerCase().includes('linkedin') &&
+          !text.toLowerCase().includes('profile')) {
+        console.log('[Colder] Found name with selector:', selector, '→', text);
+        return text;
+      }
     }
   }
+
+  // Debug: log all h1 elements found on the page
+  const allH1s = document.querySelectorAll('h1');
+  console.log('[Colder] All h1 elements found:', allH1s.length);
+  allH1s.forEach((h1, index) => {
+    console.log(`[Colder] h1[${index}]:`, h1.textContent?.trim().substring(0, 50));
+  });
+
   return null;
 }
 
@@ -59,17 +77,26 @@ export function extractName(): string | null {
 export function extractJobTitle(): string | null {
   const selectors = [
     '.text-body-medium.break-words', // Standard headline selector
+    'div[class*="text-body-medium"]', // Any text-body-medium div
     '.pv-text-details__left-panel .text-body-medium', // Older layout
-    'main section:first-of-type .text-body-medium' // Generic selector
+    'div[class*="pv-top-card"] .text-body-medium', // Top card area
+    'main section:first-of-type .text-body-medium', // Generic selector
+    '[data-generated-suggestion-target] + div', // After the name element
+    'main h1 + div' // Right after the name h1
   ];
 
   for (const selector of selectors) {
     const element = document.querySelector(selector);
     if (element) {
       const text = element.textContent?.trim();
-      if (text && text.length > 5) return text;
+      if (text && text.length > 5 && text.length < 200) {
+        console.log('[Colder] Found headline with selector:', selector, '→', text.substring(0, 50));
+        return text;
+      }
     }
   }
+
+  console.log('[Colder] Could not find headline');
   return null;
 }
 

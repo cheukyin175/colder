@@ -60,6 +60,7 @@ export class GenerateService {
         outreachObjectives: purposeMapping[purpose || 'connection'],
       };
 
+      // Generate message first, before deducting credits
       const analysis = await profileAnalyzerAgent.analyzeProfile(
         targetProfile as any,
         userProfile as any,
@@ -79,6 +80,7 @@ export class GenerateService {
         this.defaultModel,
       );
 
+      // Only deduct credits after successful generation
       await this.prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
@@ -127,6 +129,7 @@ export class GenerateService {
     }
 
     try {
+      // Polish message first, before deducting credits
       const polishedMessage = await messagePolisherAgent.polishMessage(
         {
           originalMessage: polishDto.originalMessage,
@@ -138,7 +141,7 @@ export class GenerateService {
         this.defaultModel,
       );
 
-      // Deduct credit
+      // Only deduct credits after successful polishing
       await this.prisma.user.update({
         where: { id: userId },
         data: { credits: { decrement: 1 } },

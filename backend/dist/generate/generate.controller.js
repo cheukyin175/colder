@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const generate_service_1 = require("./generate.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const generate_message_dto_1 = require("./dto/generate-message.dto");
+const polish_message_dto_1 = require("./dto/polish-message.dto");
 let GenerateController = class GenerateController {
     generateService;
     constructor(generateService) {
@@ -25,6 +26,14 @@ let GenerateController = class GenerateController {
     generateMessage(req, generateMessageDto) {
         const userId = req.user.userId;
         return this.generateService.generateMessageForUser(userId, generateMessageDto);
+    }
+    regenerateMessage(req, generateMessageDto) {
+        const userId = req.user.userId;
+        return this.generateService.generateMessageForUser(userId, generateMessageDto);
+    }
+    polishMessage(req, polishMessageDto) {
+        const userId = req.user.userId;
+        return this.generateService.polishMessage(userId, polishMessageDto);
     }
 };
 exports.GenerateController = GenerateController;
@@ -36,6 +45,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, generate_message_dto_1.GenerateMessageDto]),
     __metadata("design:returntype", void 0)
 ], GenerateController.prototype, "generateMessage", null);
+__decorate([
+    (0, common_1.Post)('regenerate'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, generate_message_dto_1.GenerateMessageDto]),
+    __metadata("design:returntype", void 0)
+], GenerateController.prototype, "regenerateMessage", null);
+__decorate([
+    (0, common_1.Post)('polish'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, polish_message_dto_1.PolishMessageDto]),
+    __metadata("design:returntype", void 0)
+], GenerateController.prototype, "polishMessage", null);
 exports.GenerateController = GenerateController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('generate'),

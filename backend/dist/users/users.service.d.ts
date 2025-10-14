@@ -3,5 +3,6 @@ import { User } from '@prisma/client';
 export declare class UsersService {
     private prisma;
     constructor(prisma: PrismaService);
-    upsertUser(googleId: string, email: string, name: string): Promise<User>;
+    upsertUser(userId: string, email: string, name?: string): Promise<User>;
+    findById(userId: string): Promise<User | null>;
 }

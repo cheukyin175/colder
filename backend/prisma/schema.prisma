@@ -18,22 +18,20 @@ enum Plan {
 
 // User model to store user information and their subscription status
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id // Use Supabase auth.users.id (UUID)
   email     String   @unique
   name      String?
-  googleId  String   @unique
   credits   Int      @default(20)
   plan      Plan     @default(FREE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // User-configurable settings
-  userName              String? 
+  userName              String?
   userRole              String?
   userCompany           String?
   userBackground        String?
   userValueProposition  String?
-  userOutreachObjectives String? @default("General Connection")
 
   messages Message[] // Relation to the messages a user has generated
   generatedProfiles GeneratedProfile[] // Relation to the profiles a user has generated for

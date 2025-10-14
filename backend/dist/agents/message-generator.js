@@ -11,8 +11,8 @@ const AnnotationSchema = zod_1.z.object({
 const MessageOutputSchema = zod_1.z.object({
     subject: zod_1.z.string().optional().nullable(),
     body: zod_1.z.string(),
-    annotations: zod_1.z.array(AnnotationSchema),
-    wordCount: zod_1.z.number(),
+    annotations: zod_1.z.array(AnnotationSchema).optional().default([]),
+    wordCount: zod_1.z.number().optional().default(0),
 });
 class MessageGeneratorAgent {
     async generateMessage(targetProfile, userProfile, analysis, options, apiKey, modelName) {
@@ -48,7 +48,7 @@ class MessageGeneratorAgent {
                 targetProfileId: targetProfile.id,
                 analysisId: `${targetProfile.id}_${userProfile.id}`,
                 ...validatedData,
-                annotations: validatedData.annotations.map(ann => ({ ...ann, highlight: ann.source === 'target_profile' })),
+                annotations: (validatedData.annotations || []).map(ann => ({ ...ann, highlight: ann.source === 'target_profile' })),
                 tone: options.tone,
                 length: options.length,
                 generatedAt: new Date(),

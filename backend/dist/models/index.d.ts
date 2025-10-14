@@ -1,4 +1,4 @@
-export type TonePreset = 'professional' | 'casual' | 'enthusiastic';
+export type TonePreset = 'professional' | 'casual' | 'enthusiastic' | 'formal' | 'friendly';
 export type MessageLength = 'short' | 'medium' | 'long';
 export type ExtractionQuality = 'complete' | 'partial' | 'minimal';
 export type Relevance = 'high' | 'medium' | 'low';

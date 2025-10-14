@@ -16,6 +16,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const profile_analyzer_1 = require("../agents/profile-analyzer");
 const message_generator_1 = require("../agents/message-generator");
+const message_polisher_1 = require("../agents/message-polisher");
 let GenerateService = class GenerateService {
     prisma;
     configService;
@@ -40,10 +41,30 @@ let GenerateService = class GenerateService {
             throw new common_1.UnauthorizedException('You have no remaining credits.');
         }
         try {
-            const { targetProfile } = generateDto;
-            const userProfile = { ...user, id: userId };
+            const { targetProfile, tone, purpose, customPurpose, length } = generateDto;
+            const purposeMapping = {
+                'connection': 'General Connection',
+                'coffee_chat': 'Coffee Chat Request',
+                'informational_interview': 'Informational Interview Request',
+                'collaboration': 'Collaboration Proposal',
+                'job_inquiry': 'Job Inquiry',
+                'sales': 'Sales/Partnership Proposal',
+                'custom': customPurpose || 'General Connection'
+            };
+            const userProfile = {
+                id: userId,
+                name: user.userName || user.name || 'User',
+                currentRole: user.userRole || '',
+                currentCompany: user.userCompany || '',
+                professionalBackground: user.userBackground || '',
+                valueProposition: user.userValueProposition || '',
+                outreachObjectives: purposeMapping[purpose || 'connection'],
+            };
             const analysis = await profile_analyzer_1.profileAnalyzerAgent.analyzeProfile(targetProfile, userProfile, this.openRouterApiKey, this.defaultModel);
-            const messageDraft = await message_generator_1.messageGeneratorAgent.generateMessage(targetProfile, userProfile, analysis, { tone: 'professional', length: 'medium' }, this.openRouterApiKey, this.defaultModel);
+            const messageDraft = await message_generator_1.messageGeneratorAgent.generateMessage(targetProfile, userProfile, analysis, {
+                tone: tone || 'professional',
+                length: length || 'medium'
+            }, this.openRouterApiKey, this.defaultModel);
             await this.prisma.$transaction(async (tx) => {
                 await tx.user.update({
                     where: { id: userId },
@@ -67,6 +88,36 @@ let GenerateService = class GenerateService {
         catch (e) {
             console.error("Message generation failed:", e);
             throw new common_1.InternalServerErrorException("Failed to generate message due to an internal error.");
+        }
+    }
+    async polishMessage(userId, polishDto) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        if (user.credits <= 0) {
+            throw new common_1.UnauthorizedException('You have no remaining credits.');
+        }
+        try {
+            const polishedMessage = await message_polisher_1.messagePolisherAgent.polishMessage({
+                originalMessage: polishDto.originalMessage,
+                userFeedback: polishDto.userFeedback,
+                tone: polishDto.tone || 'professional',
+                length: polishDto.length || 'medium',
+            }, this.openRouterApiKey, this.defaultModel);
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { credits: { decrement: 1 } },
+            });
+            return {
+                body: polishedMessage.body,
+                wordCount: polishedMessage.wordCount,
+                changes: polishedMessage.changes,
+            };
+        }
+        catch (e) {
+            console.error("Message polishing failed:", e);
+            throw new common_1.InternalServerErrorException("Failed to polish message due to an internal error.");
         }
     }
 };

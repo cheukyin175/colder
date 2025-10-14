@@ -17,6 +17,7 @@
 		"lint": "eslint src --ext .ts,.tsx"
 	},
 	"dependencies": {
+		"@supabase/supabase-js": "^2.75.0",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
 		"zod": "^4.1.12"
@@ -44,16 +45,7 @@
 		],
 		"permissions": [
 			"storage",
-			"identity",
-			"identity.email",
 			"alarms"
-		],
-		"oauth2": {
-			"client_id": "764973427347-ph4hiohtool7r4u73730qdovj8nhlqhh.apps.googleusercontent.com",
-			"scopes": [
-				"https://www.googleapis.com/auth/userinfo.email",
-				"https://www.googleapis.com/auth/userinfo.profile"
-			]
-		}
+		]
 	}
 }

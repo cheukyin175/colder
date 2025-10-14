@@ -9,7 +9,7 @@ export class SettingsService {
   /**
    * Retrieves the settings for a given user.
    * @param userId The ID of the user.
-   * @returns The user's settings.
+   * @returns The user's settings as saved in the database.
    */
   async getSettings(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -20,9 +20,15 @@ export class SettingsService {
         userCompany: true,
         userBackground: true,
         userValueProposition: true,
-        userOutreachObjectives: true,
       },
     });
+
+    if (!user) {
+      // User not found - this shouldn't happen as JWT strategy creates users
+      throw new Error('User not found');
+    }
+
+    // Return the user's settings exactly as saved
     return user;
   }
 
@@ -42,7 +48,6 @@ export class SettingsService {
         userCompany: true,
         userBackground: true,
         userValueProposition: true,
-        userOutreachObjectives: true,
       },
     });
   }

@@ -2,16 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MESSAGE_GENERATOR_EXAMPLES = exports.MESSAGE_GENERATOR_USER_PROMPT = exports.MESSAGE_GENERATOR_SYSTEM_PROMPT = void 0;
 exports.formatMessageGeneratorPrompt = formatMessageGeneratorPrompt;
-exports.MESSAGE_GENERATOR_SYSTEM_PROMPT = `You are an expert at writing personalized cold outreach messages for LinkedIn that get responses.
+exports.MESSAGE_GENERATOR_SYSTEM_PROMPT = `You are an expert at writing personalized cold outreach messages for LinkedIn that get high response rates.
 
-Your messages should:
-1. Reference at least 2 specific details from the target's profile.
-2. Be authentic and conversational, not templated or salesy.
-3. Clearly communicate value without being pushy.
-4. Strictly adhere to the user's specified Outreach Objective, tailoring the angle and call-to-action accordingly.
-5. Match the requested tone and length.
+Core Principles:
+1. PERSONALIZATION: Reference 2-3 specific, unique details from their profile (recent achievements, posts, projects, career transitions)
+2. AUTHENTICITY: Write like a real person who genuinely researched their profile, not a template
+3. VALUE-FIRST: Lead with what's in it for them, not what you want
+4. CLEAR PURPOSE: Match the message purpose with an appropriate, specific call-to-action
+5. TONE CONSISTENCY: Maintain the requested tone throughout the message
 
-Important: You will receive raw LinkedIn profile text. Extract and reference specific details naturally in your message.`;
+Important: You'll receive raw LinkedIn profile text. Extract meaningful details and weave them naturally into your message.`;
 exports.MESSAGE_GENERATOR_USER_PROMPT = `Generate a personalized LinkedIn outreach message based on this profile:
 
 ## Target Profile (Raw LinkedIn Text):
@@ -29,48 +29,67 @@ Outreach Objective: {userObjective}
 Tone: {tone}
 Length: {length}
 
-## Objective-Specific Instructions:
-- If Objective is "General Connection": Focus on mutual interests or admiration for their work. The call-to-action should be a soft ask to connect and follow their work.
-- If Objective is "Recruiting Inquiry": Subtly hint at a potential opportunity that aligns with their skills. The call-to-action should be a confidential chat about their career goals or what they're looking for in their next role.
-- If Objective is "Sales/Partnership Proposal": Clearly align your value proposition with a specific project, achievement, or stated goal from their profile. The call-to-action should be a brief meeting to discuss how you can specifically help them achieve a goal.
-- If Objective is "Informational Interview Request": Position yourself as an admirer of their work and career path. The call-to-action should be a request for a brief 15-minute chat to learn from their experience.
+## Purpose-Specific Guidelines:
 
-## General Requirements:
-1. **Personalization**: Reference at least 2 specific details from their profile (recent posts, projects, career moves, skills, etc.).
-2. **Value Communication**: Clearly but subtly communicate how you can provide value, as it relates to your objective.
-3. **Authentic Voice**: Write naturally as if you've genuinely researched their profile.
-4. **Call to Action**: End with a soft, specific ask that is directly related to your stated objective.
+**General Connection**: Express genuine interest in their work/expertise. End with: "Would love to connect and stay in touch."
+
+**Coffee Chat Request**: Find a shared interest or mutual connection point. End with: "Would you be open to a quick coffee chat next week?"
+
+**Informational Interview Request**: Show you've done homework on their career path. End with: "Could I ask you a few questions about your experience in [specific area]? 15 minutes would be incredibly valuable."
+
+**Collaboration Proposal**: Identify a specific area where your skills complement theirs. End with: "I think there's an interesting opportunity to collaborate on [specific area]. Open to exploring?"
+
+**Job Inquiry**: Reference their company's work and your relevant experience. End with: "I'd love to learn more about your team and any upcoming opportunities. Could we connect?"
+
+**Sales/Partnership Proposal**: Align your solution with their specific challenge or goal. End with: "I have some ideas that might help with [specific challenge]. Worth a brief call to explore?"
+
+## Tone Guidelines:
+- **Professional**: Polished but not stiff. Use full sentences, proper grammar, avoid slang.
+- **Casual**: Conversational and relaxed. OK to use contractions, start with "Hey" instead of "Hi".
+- **Enthusiastic**: High energy and positive. Use exclamation points sparingly but effectively.
+- **Formal**: Business-like and respectful. Use titles when appropriate, avoid contractions.
+- **Friendly**: Warm and approachable. Like talking to a colleague you respect.
+
+## Writing Requirements:
+1. **Opening Hook**: Start with something specific about THEM, not generic pleasantries
+2. **Personal Details**: Weave in 2-3 specific references naturally (don't just list them)
+3. **Clear Value**: Make it obvious what's in it for them within the first 2 sentences
+4. **Authentic Voice**: Write like you actually read their profile and care about their work
+5. **Specific CTA**: End with ONE clear, specific ask that matches your purpose
 
 ## Output Format:
 Return a JSON object with:
 {
-  "subject": "string", // For email-style messages
-  "body": "string",
-  "annotations": [
-    {
-      "text": "string", // Part of the message
-      "source": "target_profile|user_profile|generated",
-      "sourceField": "string|null" // Which part of profile it came from
-    }
-  ],
-  "wordCount": number
-}`;
+  "subject": null,  // Always null for LinkedIn messages
+  "body": "string", // The complete message text
+  "wordCount": number // Actual word count of the message
+}
+
+IMPORTANT: Focus on the message quality. Don't worry about annotations - just write a great message.`;
 exports.MESSAGE_GENERATOR_EXAMPLES = {
     "General Connection": {
-        body: "Hey Alex,\n\nYour post about Figma variables caught my eye - I've been experimenting with them for our design system at DesignLab too! Noticed you led that impressive mobile app redesign with 40% engagement boost. Would love to connect and follow your work.",
-        wordCount: 54
+        body: "Hi Alex,\n\nYour post about Figma variables caught my eye - I've been experimenting with them for our design system at DesignLab too! Noticed you led that impressive mobile app redesign with 40% engagement boost.\n\nWould love to connect and stay in touch about design systems.",
+        wordCount: 45
     },
-    "Recruiting Inquiry": {
-        body: "Hi Michael,\n\nI was impressed by your recent achievement shipping the real-time payment processing system. Your focus on distributed systems is exactly the kind of expertise we value at CryptoTech Labs, where we're solving similar complex challenges.\n\nI lead our blockchain solutions team and thought you might be interested in a confidential chat about what you're looking for in your next career move. Would you be open to a brief call next week?",
-        wordCount: 86
-    },
-    "Sales/Partnership Proposal": {
-        body: "Hi Rachel,\n\nAchieving carbon negative status is incredible! At GreenPath Advisors, we help companies scale their sustainability initiatives, and your goal of helping 1000 companies do the same really resonates.\n\nI have a few insights from helping 50+ tech companies achieve carbon neutrality that could accelerate your mission. Would you be open to a brief call next week to discuss a potential partnership?",
-        wordCount: 81
+    "Coffee Chat Request": {
+        body: "Hey Emma,\n\nJust saw your talk at ReactConf about micro-frontends - your approach to module federation is exactly what we've been exploring at TechCo.\n\nI'm also in SF and would love to grab coffee next week if you're free. Would be great to compare notes on scaling React apps!",
+        wordCount: 48
     },
     "Informational Interview Request": {
-        body: "Hi Sarah,\n\nI've been following your work in B2B SaaS product management for a while, and your recent article on API-first design was particularly insightful. As a solutions architect also focused on API design, I really admire your career path from startup to a major tech corp.\n\nWould you be open to a brief 15-minute chat in the coming weeks? I'd love to learn a bit more about your experience navigating that transition.",
-        wordCount: 88
+        body: "Hi Sarah,\n\nYour transition from engineering to product management at Stripe is fascinating - especially how you leveraged your technical background to drive API-first product decisions.\n\nI'm at a similar crossroads in my career. Could I ask you a few questions about your experience making that leap? Even 15 minutes would be incredibly valuable.",
+        wordCount: 53
+    },
+    "Collaboration Proposal": {
+        body: "Hi David,\n\nYour open-source work on the GraphQL caching library is impressive! I've been building a complementary tool for real-time subscriptions that could work really well with your approach.\n\nI think there's an interesting opportunity to collaborate on making these tools work together seamlessly. Open to exploring?",
+        wordCount: 46
+    },
+    "Job Inquiry": {
+        body: "Hi Jennifer,\n\nI've been following Notion's evolution from note-taking app to full workspace platform - your team's approach to building collaborative tools is exactly the kind of product vision I'm passionate about.\n\nWith my background in real-time collaboration features at Miro, I'd love to learn more about your team and any upcoming opportunities. Could we connect?",
+        wordCount: 56
+    },
+    "Sales/Partnership Proposal": {
+        body: "Hi Rachel,\n\nYour recent post about struggling with customer churn really resonated - we faced the same challenge at my last startup until we implemented predictive analytics.\n\nI have some ideas from helping 50+ SaaS companies reduce churn by 30%+ that might help with your Q4 retention goals. Worth a brief call to explore?",
+        wordCount: 53
     }
 };
 function formatMessageGeneratorPrompt(targetProfileText, userProfile, options) {

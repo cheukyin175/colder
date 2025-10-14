@@ -4,5 +4,4 @@ export class UpdateSettingsDto {
   userCompany?: string;
   userBackground?: string;
   userValueProposition?: string;
-  userOutreachObjectives?: string;
 }

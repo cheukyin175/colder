@@ -26,9 +26,11 @@ let SettingsService = class SettingsService {
                 userCompany: true,
                 userBackground: true,
                 userValueProposition: true,
-                userOutreachObjectives: true,
             },
         });
+        if (!user) {
+            throw new Error('User not found');
+        }
         return user;
     }
     async updateSettings(userId, data) {
@@ -41,7 +43,6 @@ let SettingsService = class SettingsService {
                 userCompany: true,
                 userBackground: true,
                 userValueProposition: true,
-                userOutreachObjectives: true,
             },
         });
     }

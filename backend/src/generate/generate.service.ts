@@ -5,6 +5,7 @@ import { Plan } from '@prisma/client';
 import { GenerateMessageDto } from './dto/generate-message.dto';
 import { profileAnalyzerAgent } from '../agents/profile-analyzer';
 import { messageGeneratorAgent } from '../agents/message-generator';
+import { messagePolisherAgent } from '../agents/message-polisher';
 
 @Injectable()
 export class GenerateService {
@@ -35,8 +36,29 @@ export class GenerateService {
     }
 
     try {
-      const { targetProfile } = generateDto;
-      const userProfile = { ...user, id: userId };
+      const { targetProfile, tone, purpose, customPurpose, length } = generateDto;
+
+      // Map purpose to outreach objectives format expected by the prompt
+      const purposeMapping = {
+        'connection': 'General Connection',
+        'coffee_chat': 'Coffee Chat Request',
+        'informational_interview': 'Informational Interview Request',
+        'collaboration': 'Collaboration Proposal',
+        'job_inquiry': 'Job Inquiry',
+        'sales': 'Sales/Partnership Proposal',
+        'custom': customPurpose || 'General Connection'
+      };
+
+      // Construct userProfile with the correct field names expected by the message generator
+      const userProfile = {
+        id: userId,
+        name: user.userName || user.name || 'User',
+        currentRole: user.userRole || '',
+        currentCompany: user.userCompany || '',
+        professionalBackground: user.userBackground || '',
+        valueProposition: user.userValueProposition || '',
+        outreachObjectives: purposeMapping[purpose || 'connection'],
+      };
 
       const analysis = await profileAnalyzerAgent.analyzeProfile(
         targetProfile as any,
@@ -49,7 +71,10 @@ export class GenerateService {
         targetProfile as any,
         userProfile as any,
         analysis,
-        { tone: 'professional', length: 'medium' },
+        {
+          tone: tone || 'professional',
+          length: length || 'medium'
+        },
         this.openRouterApiKey,
         this.defaultModel,
       );
@@ -79,6 +104,54 @@ export class GenerateService {
     } catch (e) {
       console.error("Message generation failed:", e);
       throw new InternalServerErrorException("Failed to generate message due to an internal error.");
+    }
+  }
+
+  async polishMessage(
+    userId: string,
+    polishDto: {
+      originalMessage: string;
+      userFeedback: string;
+      tone?: 'professional' | 'casual' | 'enthusiastic' | 'formal' | 'friendly';
+      length?: 'short' | 'medium' | 'long';
+    }
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.credits <= 0) {
+      throw new UnauthorizedException('You have no remaining credits.');
+    }
+
+    try {
+      const polishedMessage = await messagePolisherAgent.polishMessage(
+        {
+          originalMessage: polishDto.originalMessage,
+          userFeedback: polishDto.userFeedback,
+          tone: polishDto.tone || 'professional',
+          length: polishDto.length || 'medium',
+        },
+        this.openRouterApiKey,
+        this.defaultModel,
+      );
+
+      // Deduct credit
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: 1 } },
+      });
+
+      return {
+        body: polishedMessage.body,
+        wordCount: polishedMessage.wordCount,
+        changes: polishedMessage.changes,
+      };
+    } catch (e) {
+      console.error("Message polishing failed:", e);
+      throw new InternalServerErrorException("Failed to polish message due to an internal error.");
     }
   }
 }

@@ -17,18 +17,23 @@ let UsersService = class UsersService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async upsertUser(googleId, email, name) {
+    async upsertUser(userId, email, name) {
         return this.prisma.user.upsert({
-            where: { googleId },
+            where: { id: userId },
             update: {
                 email,
-                name,
+                name: name || email.split('@')[0],
             },
             create: {
-                googleId,
+                id: userId,
                 email,
-                name,
+                name: name || email.split('@')[0],
             },
+        });
+    }
+    async findById(userId) {
+        return this.prisma.user.findUnique({
+            where: { id: userId },
         });
     }
 };

@@ -1,19 +1,27 @@
-export declare const MESSAGE_GENERATOR_SYSTEM_PROMPT = "You are an expert at writing personalized cold outreach messages for LinkedIn that get responses.\n\nYour messages should:\n1. Reference at least 2 specific details from the target's profile.\n2. Be authentic and conversational, not templated or salesy.\n3. Clearly communicate value without being pushy.\n4. Strictly adhere to the user's specified Outreach Objective, tailoring the angle and call-to-action accordingly.\n5. Match the requested tone and length.\n\nImportant: You will receive raw LinkedIn profile text. Extract and reference specific details naturally in your message.";
-export declare const MESSAGE_GENERATOR_USER_PROMPT = "Generate a personalized LinkedIn outreach message based on this profile:\n\n## Target Profile (Raw LinkedIn Text):\n{targetProfileText}\n\n## Sender Profile:\nName: {userName}\nCurrent Role: {userRole}\nCompany: {userCompany}\nBackground: {userBackground}\nValue Proposition: {userValue}\n\n## Message Parameters:\nOutreach Objective: {userObjective}\nTone: {tone}\nLength: {length}\n\n## Objective-Specific Instructions:\n- If Objective is \"General Connection\": Focus on mutual interests or admiration for their work. The call-to-action should be a soft ask to connect and follow their work.\n- If Objective is \"Recruiting Inquiry\": Subtly hint at a potential opportunity that aligns with their skills. The call-to-action should be a confidential chat about their career goals or what they're looking for in their next role.\n- If Objective is \"Sales/Partnership Proposal\": Clearly align your value proposition with a specific project, achievement, or stated goal from their profile. The call-to-action should be a brief meeting to discuss how you can specifically help them achieve a goal.\n- If Objective is \"Informational Interview Request\": Position yourself as an admirer of their work and career path. The call-to-action should be a request for a brief 15-minute chat to learn from their experience.\n\n## General Requirements:\n1. **Personalization**: Reference at least 2 specific details from their profile (recent posts, projects, career moves, skills, etc.).\n2. **Value Communication**: Clearly but subtly communicate how you can provide value, as it relates to your objective.\n3. **Authentic Voice**: Write naturally as if you've genuinely researched their profile.\n4. **Call to Action**: End with a soft, specific ask that is directly related to your stated objective.\n\n## Output Format:\nReturn a JSON object with:\n{\n  \"subject\": \"string\", // For email-style messages\n  \"body\": \"string\",\n  \"annotations\": [\n    {\n      \"text\": \"string\", // Part of the message\n      \"source\": \"target_profile|user_profile|generated\",\n      \"sourceField\": \"string|null\" // Which part of profile it came from\n    }\n  ],\n  \"wordCount\": number\n}";
+export declare const MESSAGE_GENERATOR_SYSTEM_PROMPT = "You are an expert at writing personalized cold outreach messages for LinkedIn that get high response rates.\n\nCore Principles:\n1. PERSONALIZATION: Reference 2-3 specific, unique details from their profile (recent achievements, posts, projects, career transitions)\n2. AUTHENTICITY: Write like a real person who genuinely researched their profile, not a template\n3. VALUE-FIRST: Lead with what's in it for them, not what you want\n4. CLEAR PURPOSE: Match the message purpose with an appropriate, specific call-to-action\n5. TONE CONSISTENCY: Maintain the requested tone throughout the message\n\nImportant: You'll receive raw LinkedIn profile text. Extract meaningful details and weave them naturally into your message.";
+export declare const MESSAGE_GENERATOR_USER_PROMPT = "Generate a personalized LinkedIn outreach message based on this profile:\n\n## Target Profile (Raw LinkedIn Text):\n{targetProfileText}\n\n## Sender Profile:\nName: {userName}\nCurrent Role: {userRole}\nCompany: {userCompany}\nBackground: {userBackground}\nValue Proposition: {userValue}\n\n## Message Parameters:\nOutreach Objective: {userObjective}\nTone: {tone}\nLength: {length}\n\n## Purpose-Specific Guidelines:\n\n**General Connection**: Express genuine interest in their work/expertise. End with: \"Would love to connect and stay in touch.\"\n\n**Coffee Chat Request**: Find a shared interest or mutual connection point. End with: \"Would you be open to a quick coffee chat next week?\"\n\n**Informational Interview Request**: Show you've done homework on their career path. End with: \"Could I ask you a few questions about your experience in [specific area]? 15 minutes would be incredibly valuable.\"\n\n**Collaboration Proposal**: Identify a specific area where your skills complement theirs. End with: \"I think there's an interesting opportunity to collaborate on [specific area]. Open to exploring?\"\n\n**Job Inquiry**: Reference their company's work and your relevant experience. End with: \"I'd love to learn more about your team and any upcoming opportunities. Could we connect?\"\n\n**Sales/Partnership Proposal**: Align your solution with their specific challenge or goal. End with: \"I have some ideas that might help with [specific challenge]. Worth a brief call to explore?\"\n\n## Tone Guidelines:\n- **Professional**: Polished but not stiff. Use full sentences, proper grammar, avoid slang.\n- **Casual**: Conversational and relaxed. OK to use contractions, start with \"Hey\" instead of \"Hi\".\n- **Enthusiastic**: High energy and positive. Use exclamation points sparingly but effectively.\n- **Formal**: Business-like and respectful. Use titles when appropriate, avoid contractions.\n- **Friendly**: Warm and approachable. Like talking to a colleague you respect.\n\n## Writing Requirements:\n1. **Opening Hook**: Start with something specific about THEM, not generic pleasantries\n2. **Personal Details**: Weave in 2-3 specific references naturally (don't just list them)\n3. **Clear Value**: Make it obvious what's in it for them within the first 2 sentences\n4. **Authentic Voice**: Write like you actually read their profile and care about their work\n5. **Specific CTA**: End with ONE clear, specific ask that matches your purpose\n\n## Output Format:\nReturn a JSON object with:\n{\n  \"subject\": null,  // Always null for LinkedIn messages\n  \"body\": \"string\", // The complete message text\n  \"wordCount\": number // Actual word count of the message\n}\n\nIMPORTANT: Focus on the message quality. Don't worry about annotations - just write a great message.";
 export declare const MESSAGE_GENERATOR_EXAMPLES: {
     "General Connection": {
         body: string;
         wordCount: number;
     };
-    "Recruiting Inquiry": {
-        body: string;
-        wordCount: number;
-    };
-    "Sales/Partnership Proposal": {
+    "Coffee Chat Request": {
         body: string;
         wordCount: number;
     };
     "Informational Interview Request": {
+        body: string;
+        wordCount: number;
+    };
+    "Collaboration Proposal": {
+        body: string;
+        wordCount: number;
+    };
+    "Job Inquiry": {
+        body: string;
+        wordCount: number;
+    };
+    "Sales/Partnership Proposal": {
         body: string;
         wordCount: number;
     };
@@ -26,6 +34,6 @@ export declare function formatMessageGeneratorPrompt(targetProfileText: string, 
     valueProposition: string;
     outreachObjectives: string;
 }, options: {
-    tone: 'professional' | 'casual' | 'enthusiastic';
+    tone: 'professional' | 'casual' | 'enthusiastic' | 'formal' | 'friendly';
     length: 'short' | 'medium' | 'long';
 }): string;

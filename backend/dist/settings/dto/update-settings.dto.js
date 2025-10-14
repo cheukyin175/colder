@@ -7,7 +7,6 @@ class UpdateSettingsDto {
     userCompany;
     userBackground;
     userValueProposition;
-    userOutreachObjectives;
 }
 exports.UpdateSettingsDto = UpdateSettingsDto;
 //# sourceMappingURL=update-settings.dto.js.map

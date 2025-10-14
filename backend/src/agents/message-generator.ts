@@ -15,8 +15,8 @@ const AnnotationSchema = z.object({
 const MessageOutputSchema = z.object({
   subject: z.string().optional().nullable(),
   body: z.string(),
-  annotations: z.array(AnnotationSchema),
-  wordCount: z.number(),
+  annotations: z.array(AnnotationSchema).optional().default([]),
+  wordCount: z.number().optional().default(0),
 });
 
 export interface MessageGenerationOptions {
@@ -73,7 +73,7 @@ export class MessageGeneratorAgent {
         targetProfileId: targetProfile.id,
         analysisId: `${targetProfile.id}_${userProfile.id}`,
         ...validatedData,
-        annotations: validatedData.annotations.map(ann => ({ ...ann, highlight: ann.source === 'target_profile' })) as Annotation[],
+        annotations: (validatedData.annotations || []).map(ann => ({ ...ann, highlight: ann.source === 'target_profile' })) as Annotation[],
         tone: options.tone,
         length: options.length,
         generatedAt: new Date(),

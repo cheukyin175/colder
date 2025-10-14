@@ -9,14 +9,12 @@ export declare class SettingsController {
         userCompany: string | null;
         userBackground: string | null;
         userValueProposition: string | null;
-        userOutreachObjectives: string | null;
-    } | null>;
+    }>;
     updateSettings(req: any, updateSettingsDto: UpdateSettingsDto): Promise<{
         userName: string | null;
         userRole: string | null;
         userCompany: string | null;
         userBackground: string | null;
         userValueProposition: string | null;
-        userOutreachObjectives: string | null;
     }>;
 }

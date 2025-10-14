@@ -3,7 +3,7 @@
  */
 
 // Tone presets for message generation
-export type TonePreset = 'professional' | 'casual' | 'enthusiastic';
+export type TonePreset = 'professional' | 'casual' | 'enthusiastic' | 'formal' | 'friendly';
 
 // Message length options with word count ranges
 export type MessageLength = 'short' | 'medium' | 'long';

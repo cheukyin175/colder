@@ -8,6 +8,10 @@ node_modules/
 /dist
 /.plasmo
 .parcel-cache/
+apps/*/build
+apps/*/dist
+apps/extension/.plasmo
+packages/*/dist
 
 # Environment variables
 .env

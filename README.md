@@ -38,13 +38,14 @@ cd colder
 ### 2. Install Dependencies
 
 ```bash
-# Install root dependencies
+# Install all workspace dependencies (from root)
 pnpm install
 
-# Install backend dependencies
-cd backend
-pnpm install
-cd ..
+# This will install dependencies for:
+# - Root workspace
+# - apps/extension
+# - apps/backend
+# - packages/shared-types
 ```
 
 ### 3. Set Up OpenRouter (AI Provider)
@@ -114,7 +115,7 @@ supabase start
 
 ### 4. Configure Environment Variables
 
-#### Backend Configuration (`backend/.env`)
+#### Backend Configuration (`apps/backend/.env`)
 
 ```env
 # Database
@@ -142,31 +143,39 @@ PLASMO_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 ### 5. Set Up the Database
 
 ```bash
-cd backend
+# From root directory
+pnpm prisma:generate   # Generate Prisma client
+pnpm prisma:push       # Push schema to database
 
-# Generate Prisma client
+# Or from backend directory
+cd apps/backend
 npx prisma generate
-
-# Push schema to database
 npx prisma db push
-
-# (Optional) Seed with sample data
-npx prisma db seed
+npx prisma db seed     # (Optional) Seed with sample data
 ```
 
 ### 6. Start Development Servers
 
-#### Terminal 1: Backend Server
+You can run both servers in parallel or separately:
+
+#### Option A: Run Both (Parallel)
 ```bash
-cd backend
+# From root directory
 pnpm dev
+# Runs both extension and backend in parallel
+```
+
+#### Option B: Run Separately
+
+Terminal 1: Backend Server
+```bash
+pnpm dev:backend
 # Backend runs on http://localhost:3000
 ```
 
-#### Terminal 2: Extension Development
+Terminal 2: Extension Development
 ```bash
-# In root directory
-pnpm dev
+pnpm dev:extension
 # Extension development server starts
 ```
 
@@ -191,26 +200,34 @@ pnpm dev
 5. **Refine**: Use "Polish" to refine with specific feedback
 6. **Copy**: Click "Copy Message" to use in LinkedIn
 
-## Project Structure
+## Project Structure (Monorepo)
 
 ```
 colder/
-├── src/                    # Extension source (React components)
-│   ├── popup.tsx          # Main extension popup
-│   ├── content.ts         # LinkedIn content script
-│   └── lib/               # Utilities and Supabase client
-├── backend/
-│   ├── src/
-│   │   ├── agents/        # AI agents for analysis and generation
-│   │   ├── auth/          # JWT strategy and guards
-│   │   ├── generate/      # Message generation endpoints
-│   │   ├── settings/      # User settings management
-│   │   └── supabase/      # Supabase service
-│   └── prisma/
-│       └── schema.prisma  # Database schema
-├── package.json
-└── manifest.json          # Extension manifest
+├── apps/
+│   ├── extension/              # Chrome extension
+│   │   ├── src/               # React components
+│   │   │   ├── popup.tsx      # Main extension popup
+│   │   │   ├── content.ts     # LinkedIn content script
+│   │   │   └── lib/           # Utilities and Supabase client
+│   │   └── package.json
+│   └── backend/                # NestJS API
+│       ├── src/
+│       │   ├── agents/        # AI agents for analysis and generation
+│       │   ├── auth/          # JWT strategy and guards
+│       │   ├── generate/      # Message generation endpoints
+│       │   ├── settings/      # User settings management
+│       │   └── supabase/      # Supabase service
+│       ├── prisma/
+│       │   └── schema.prisma  # Database schema
+│       └── package.json
+├── packages/
+│   └── shared-types/          # Shared TypeScript types
+├── pnpm-workspace.yaml        # Workspace configuration
+└── package.json               # Root package with workspace scripts
 ```
+
+> **Note**: This project uses a monorepo structure with pnpm workspaces. See [docs/architecture/monorepo-structure.md](docs/architecture/monorepo-structure.md) for detailed documentation.
 
 ## API Endpoints
 
@@ -223,16 +240,26 @@ colder/
 ## Development Commands
 
 ```bash
-# Root directory
-pnpm dev          # Start extension dev server
-pnpm build        # Build extension for production
-pnpm package      # Create extension zip file
+# From root directory (monorepo commands)
+pnpm dev                # Run all apps in parallel
+pnpm dev:extension      # Run extension only
+pnpm dev:backend        # Run backend only
+pnpm build              # Build all apps
+pnpm build:extension    # Build extension only
+pnpm build:backend      # Build backend only
+pnpm test               # Run all tests
+pnpm lint               # Lint all packages
+pnpm clean              # Clean all build artifacts
 
-# Backend directory
-pnpm dev          # Start backend dev server
-pnpm build        # Build backend
-pnpm start:prod   # Start production server
-npx prisma studio # Open database GUI
+# Database commands (Prisma)
+pnpm prisma:generate    # Generate Prisma client
+pnpm prisma:migrate     # Run migrations
+pnpm prisma:studio      # Open database GUI
+pnpm prisma:push        # Push schema to database
+
+# Package-specific commands
+pnpm --filter @colder/extension package  # Create extension zip
+pnpm --filter @colder/backend start:prod # Run backend in production
 ```
 
 ## Deployment

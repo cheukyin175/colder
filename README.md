@@ -62,7 +62,7 @@ The extension will trigger the 22GB Gemini Nano download automatically on first 
 
 ## 💡 Usage
 
-1. **Navigate to LinkedIn**: Go to any profile (e.g., `linkedin.com/in/williamhgates`)
+1. **Navigate to LinkedIn**: Go to any profile (e.g., `linkedin.com/in/hluaguo`)
 2. **Open Extension**: Click the Colder icon or use Chrome sidepanel
 3. **Setup Profile**: Fill in your details in the Profile tab (optional but recommended)
 4. **Generate Message**:
@@ -110,6 +110,7 @@ pnpm clean
 ## 🎨 Customization Options
 
 ### Tone Options
+
 - **Professional**: Polished but not stiff
 - **Casual**: Conversational and relaxed
 - **Enthusiastic**: High energy and positive
@@ -117,6 +118,7 @@ pnpm clean
 - **Friendly**: Warm and approachable
 
 ### Purpose Options
+
 - General Connection
 - Coffee Chat Request
 - Informational Interview
@@ -126,6 +128,7 @@ pnpm clean
 - Custom (your own purpose)
 
 ### Length Options
+
 - **Short**: 50-100 words
 - **Medium**: 100-200 words
 - **Long**: 200-300 words
@@ -135,6 +138,7 @@ pnpm clean
 ### "Chrome AI not available"
 
 **Solutions:**
+
 1. Verify Chrome version: `chrome://version/` (need 128+)
 2. Enable flag: `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input`
 3. Restart Chrome completely (Cmd+Q / Ctrl+Q)
@@ -148,6 +152,7 @@ pnpm clean
 **Check status**: `chrome://on-device-internals`
 
 **Common fixes:**
+
 - Ensure 22GB+ free disk space
 - Use Wi-Fi (not cellular/metered connection)
 - Wait 10-30 minutes for initial download
@@ -156,6 +161,7 @@ pnpm clean
 ### Profile Extraction Fails
 
 **Solutions:**
+
 1. Ensure you're on a LinkedIn profile page (`linkedin.com/in/...`)
 2. Refresh the page
 3. Check console for errors (F12)
@@ -163,6 +169,7 @@ pnpm clean
 ### Extension Won't Load
 
 **Solutions:**
+
 1. Rebuild: `pnpm clean && pnpm build`
 2. Check for errors in extension console
 3. Try removing and re-adding the extension
@@ -192,6 +199,7 @@ pnpm clean
 5. **Polish & Iterate**: Refine messages with user feedback
 
 **Tech Stack:**
+
 - React + TypeScript
 - Plasmo Framework (Chrome Extension)
 - Chrome Built-in AI (Prompt API)
@@ -208,6 +216,7 @@ pnpm clean
 ## 🤝 Contributing
 
 Contributions welcome! Please:
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes

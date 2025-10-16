@@ -1,31 +1,64 @@
 {
-	"name": "colder-monorepo",
-	"version": "0.0.1",
-	"description": "Monorepo for Colder - LinkedIn Cold Outreach AI Assistant",
-	"author": "Your Name",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"dev": "pnpm --parallel -r dev",
-		"dev:extension": "pnpm --filter @colder/extension dev",
-		"dev:backend": "pnpm --filter @colder/backend dev",
-		"build": "pnpm -r build",
-		"build:extension": "pnpm --filter @colder/extension build",
-		"build:backend": "pnpm --filter @colder/backend build",
-		"test": "pnpm -r test",
-		"lint": "pnpm -r lint",
-		"format": "pnpm -r format",
-		"clean": "pnpm -r clean && rm -rf node_modules",
-		"install:all": "pnpm install",
-		"prisma:generate": "pnpm --filter @colder/backend prisma:generate",
-		"prisma:migrate": "pnpm --filter @colder/backend prisma:migrate",
-		"prisma:studio": "pnpm --filter @colder/backend prisma:studio",
-		"prisma:push": "pnpm --filter @colder/backend prisma:push",
-		"deploy": "vercel --prod",
-		"deploy:preview": "vercel",
-		"vercel:build": "pnpm prisma:generate && pnpm build:backend"
-	},
-	"devDependencies": {
-		"typescript": "^5.7.2"
-	}
+  "name": "colder",
+  "displayName": "Colder - LinkedIn Cold Outreach AI Assistant",
+  "version": "0.1.0",
+  "description": "Chrome extension for personalized LinkedIn outreach messages using Chrome Built-in AI (Gemini Nano)",
+  "author": "Your Name",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "package": "plasmo package",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "playwright test",
+    "test:watch": "vitest watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rm -rf build .plasmo"
+  },
+  "dependencies": {
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.545.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/chrome": "^0.0.277",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.13",
+    "@types/react-dom": "^18.3.1",
+    "@vitest/ui": "^3.2.4",
+    "autoprefixer": "^10.4.21",
+    "jsdom": "^27.0.0",
+    "plasmo": "^0.90.5",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "manifest": {
+    "host_permissions": [
+      "https://www.linkedin.com/*"
+    ],
+    "permissions": [
+      "storage",
+      "sidePanel",
+      "tabs"
+    ],
+    "trial_tokens": [
+      "chrome://flags/#optimization-guide-on-device-model"
+    ]
+  }
 }

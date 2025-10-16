@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Colder brand colors */
+    --colder-ice: #5FD3F3;
+    --colder-ice-light: #B8E8F5;
+    --colder-ice-deep: #4FB3D9;
+    --colder-frost: #E8F7FB;
+
+    /* RGB values for opacity */
+    --colder-ice-rgb: 95, 211, 243;
+    --colder-ice-light-rgb: 184, 232, 245;
+    --colder-ice-deep-rgb: 79, 179, 217;
+    --colder-frost-rgb: 232, 247, 251;
+  }
+
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-colder-ice text-white px-4 py-2 rounded hover:bg-colder-ice-deep transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors;
+  }
+
+  .badge-ai-ready {
+    @apply bg-colder-ice text-white px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .card-frost {
+    @apply bg-colder-frost border border-colder-ice-light rounded-lg;
+  }
+}

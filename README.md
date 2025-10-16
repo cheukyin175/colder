@@ -1,352 +1,231 @@
 # Colder - LinkedIn Outreach Message Generator
 
-A Chrome extension that generates personalized LinkedIn outreach messages using AI. Analyze profiles and craft engaging messages with customizable tone, purpose, and length.
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
-## Features
+A Chrome extension that generates personalized LinkedIn outreach messages using **Chrome's Built-in AI** (Gemini Nano). No backend, no API keys, completely local and private.
 
+## Why Colder?
+
+Sending personalized LinkedIn messages is effective, but it's a grind. Manually researching each profile and crafting a unique message can take hours out of your day. Colder solves this problem by using local AI to do the heavy lifting for you. It analyzes a profile and generates a high-quality, personalized message in seconds, giving you back your time while boosting your response rates.
+
+## ✨ Features
+
+- 🤖 **Chrome Built-in AI**: Uses Gemini Nano running locally - no external API needed
+- 🔒 **100% Private**: All data stored locally, no cloud services
 - 🎯 **Smart Profile Analysis**: Extracts key information from LinkedIn profiles
-- 🤖 **AI-Powered Generation**: Creates personalized messages using advanced language models
-- 🎨 **Customizable Messages**: Choose tone (professional, casual, friendly, etc.) and purpose (connection, coffee chat, job inquiry, etc.)
-- ✨ **Message Polish**: Refine generated messages with specific feedback
-- 🔄 **Regenerate**: Get new versions with the same settings
-- 🔐 **Secure Authentication**: Powered by Supabase Auth
-- 💳 **Credit System**: Fair usage with credit-based generation
+- ✨ **Customizable Messages**: Choose tone, purpose, and length
+- 🔄 **Polish & Regenerate**: Refine messages with feedback
+- 📝 **Message History**: View and reuse past generations
+- ⚡ **No Costs**: No subscription, no API fees, works offline
 
-## Tech Stack
+## 📋 Prerequisites
 
-- **Frontend**: Chrome Extension with React, TypeScript, Tailwind CSS (Plasmo Framework)
-- **Backend**: NestJS, Prisma ORM, PostgreSQL
-- **Authentication**: Supabase Auth
-- **AI**: OpenRouter API (supports multiple models including GPT-4, Claude, Gemini)
+- **Chrome 128+** (Stable, Dev, or Canary)
+- **22+ GB free storage** (for Gemini Nano model)
+- **Hardware**: 4+ GB VRAM (GPU) or 16+ GB RAM + 4+ CPU cores
+- **Node.js 18+** and **pnpm**
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js 18+ and pnpm
-- PostgreSQL database (or use Supabase local development)
-- Chrome browser for extension testing
-- OpenRouter API key for AI generation (see setup instructions below)
+### 1. Enable Chrome AI
 
-## Setup Instructions
+1. Open: `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input`
+2. Set to: **Enabled**
+3. **Restart Chrome**
+4. Verify in Console:
+   ```javascript
+   await LanguageModel.availability();
+   // Should return: 'downloadable' or 'available'
+   ```
 
-### 1. Clone the Repository
+### 2. Install & Build
 
 ```bash
 git clone https://github.com/yourusername/colder.git
 cd colder
-```
-
-### 2. Install Dependencies
-
-```bash
-# Install all workspace dependencies (from root)
 pnpm install
-
-# This will install dependencies for:
-# - Root workspace
-# - apps/extension
-# - apps/backend
-# - packages/shared-types
+pnpm build
 ```
 
-### 3. Set Up OpenRouter (AI Provider)
+### 3. Load Extension
 
-OpenRouter provides unified access to multiple AI models (GPT-4, Claude, Gemini, etc.) with a single API.
+1. Open `chrome://extensions/`
+2. Enable **"Developer mode"** (top right)
+3. Click **"Load unpacked"**
+4. Select: `build/chrome-mv3-prod/`
 
-#### Getting Your API Key
+### 4. Download AI Model (First Time Only)
 
-1. **Sign Up**: Go to [openrouter.ai](https://openrouter.ai) and create an account
-2. **Add Credits**:
-   - Navigate to the Credits section
-   - Add credits ($5 minimum recommended for testing)
-   - OpenRouter uses pay-per-token pricing
-3. **Generate API Key**:
-   - Go to [openrouter.ai/keys](https://openrouter.ai/keys)
-   - Click "Create Key"
-   - Name it (e.g., "Colder Extension")
-   - Copy the key (starts with `sk-or-v1-`)
-   - **Save it securely** - you won't see it again!
+The extension will trigger the 22GB Gemini Nano download automatically on first use. This takes 10-30 minutes depending on your connection.
 
-#### Pricing & Models
+**Monitor download**: `chrome://on-device-internals` → Model Status tab
 
-OpenRouter charges per token based on the model used. Popular options:
+## 💡 Usage
 
-| Model | Cost per 1M tokens | Speed | Quality | Best For |
-|-------|-------------------|--------|---------|----------|
-| `google/gemini-2.0-flash` | $0.30 | ⚡ Fast | Good | Budget-friendly, quick generation |
-| `openai/gpt-4-turbo` | $10.00 | Medium | Excellent | High-quality messages |
-| `anthropic/claude-3-sonnet` | $3.00 | Medium | Excellent | Nuanced, thoughtful messages |
-| `meta-llama/llama-3.1-70b` | $0.70 | Fast | Good | Open source alternative |
-
-💡 **Tip**: Start with `gemini-2.0-flash` for testing - it's fast and affordable!
-
-#### Usage Estimates
-
-With $5 credit, you can generate approximately:
-- **Gemini Flash**: ~15,000 messages
-- **GPT-4 Turbo**: ~500 messages
-- **Claude Sonnet**: ~1,500 messages
-
-### 4. Set Up Supabase (Authentication & Database)
-
-#### Option A: Use Supabase Cloud (Recommended for Quick Start)
-
-1. Create a free account at [supabase.com](https://supabase.com)
-2. Create a new project
-3. Go to Settings → API to get your credentials
-4. Note down:
-   - Project URL
-   - Anon/Public key
-   - Service role key (for backend)
-
-#### Option B: Local Supabase Development
-
-```bash
-# Install Supabase CLI
-brew install supabase/tap/supabase
-
-# Start Supabase locally
-supabase start
-
-# This will output your local credentials:
-# API URL: http://127.0.0.1:54321
-# DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-# Anon key: [your-anon-key]
-```
-
-### 4. Configure Environment Variables
-
-#### Backend Configuration (`apps/backend/.env`)
-
-```env
-# Database
-DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-
-# Supabase
-SUPABASE_URL="http://127.0.0.1:54321"  # or your cloud URL
-SUPABASE_ANON_KEY="your-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"  # optional but recommended
-SUPABASE_JWT_SECRET="your-jwt-secret"  # at least 32 characters
-
-# AI Model
-OPENROUTER_API_KEY="sk-or-v1-your-key"  # Get from openrouter.ai
-DEFAULT_MODEL="google/gemini-2.0-flash"  # or any OpenRouter model
-```
-
-#### Frontend Configuration (`.env.local`)
-
-```env
-# Supabase
-PLASMO_PUBLIC_SUPABASE_URL="http://127.0.0.1:54321"  # or your cloud URL
-PLASMO_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
-```
-
-### 5. Set Up the Database
-
-```bash
-# From root directory
-pnpm prisma:generate   # Generate Prisma client
-pnpm prisma:push       # Push schema to database
-
-# Or from backend directory
-cd apps/backend
-npx prisma generate
-npx prisma db push
-npx prisma db seed     # (Optional) Seed with sample data
-```
-
-### 6. Start Development Servers
-
-You can run both servers in parallel or separately:
-
-#### Option A: Run Both (Parallel)
-```bash
-# From root directory
-pnpm dev
-# Runs both extension and backend in parallel
-```
-
-#### Option B: Run Separately
-
-Terminal 1: Backend Server
-```bash
-pnpm dev:backend
-# Backend runs on http://localhost:3000
-```
-
-Terminal 2: Extension Development
-```bash
-pnpm dev:extension
-# Extension development server starts
-```
-
-### 7. Load the Extension in Chrome
-
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode" (top right)
-3. Click "Load unpacked"
-4. Select the `build/chrome-mv3-dev` folder from your project
-5. The Colder extension icon should appear in your toolbar
-
-## Usage
-
-1. **Sign Up/Sign In**: Click the extension icon and create an account
-2. **Configure Settings**: Add your name, role, and value proposition
-3. **Navigate to LinkedIn**: Go to any LinkedIn profile
+1. **Navigate to LinkedIn**: Go to any profile (e.g., `linkedin.com/in/williamhgates`)
+2. **Open Extension**: Click the Colder icon or use Chrome sidepanel
+3. **Setup Profile**: Fill in your details in the Profile tab (optional but recommended)
 4. **Generate Message**:
-   - Select tone (Professional, Casual, Friendly, etc.)
-   - Choose purpose (Connection, Coffee Chat, Job Inquiry, etc.)
-   - Pick length (Short, Medium, Long)
-   - Click "Generate Message"
-5. **Refine**: Use "Polish" to refine with specific feedback
-6. **Copy**: Click "Copy Message" to use in LinkedIn
+   - Choose **Tone** (Professional, Casual, Friendly, etc.)
+   - Select **Purpose** (Connection, Coffee Chat, Job Inquiry, etc.)
+   - Pick **Length** (Short, Medium, Long)
+   - Click **"Generate Message"**
+5. **Copy & Use**: Click "Copy Message" and paste into LinkedIn
 
-## Project Structure (Monorepo)
+## 📁 Project Structure
 
 ```
 colder/
-├── apps/
-│   ├── extension/              # Chrome extension
-│   │   ├── src/               # React components
-│   │   │   ├── popup.tsx      # Main extension popup
-│   │   │   ├── content.ts     # LinkedIn content script
-│   │   │   └── lib/           # Utilities and Supabase client
-│   │   └── package.json
-│   └── backend/                # NestJS API
-│       ├── src/
-│       │   ├── agents/        # AI agents for analysis and generation
-│       │   ├── auth/          # JWT strategy and guards
-│       │   ├── generate/      # Message generation endpoints
-│       │   ├── settings/      # User settings management
-│       │   └── supabase/      # Supabase service
-│       ├── prisma/
-│       │   └── schema.prisma  # Database schema
-│       └── package.json
-├── packages/
-│   └── shared-types/          # Shared TypeScript types
-├── pnpm-workspace.yaml        # Workspace configuration
-└── package.json               # Root package with workspace scripts
+├── src/
+│   ├── sidepanel.tsx          # Main UI
+│   ├── services/
+│   │   ├── chrome-ai.ts       # Chrome AI API wrapper
+│   │   ├── storage.ts         # Local storage service
+│   │   └── prompts.ts         # AI prompt templates
+│   ├── contents/
+│   │   └── linkedin.ts        # Profile extraction content script
+│   ├── components/            # UI components (shadcn/ui)
+│   ├── background/            # Background service worker
+│   └── types/                 # TypeScript definitions
+├── build/                     # Built extension (generated)
+└── package.json
 ```
 
-> **Note**: This project uses a monorepo structure with pnpm workspaces. See [docs/architecture/monorepo-structure.md](docs/architecture/monorepo-structure.md) for detailed documentation.
-
-## API Endpoints
-
-- `POST /generate` - Generate a new message
-- `POST /generate/regenerate` - Generate a new version
-- `POST /generate/polish` - Polish existing message
-- `GET /settings` - Get user settings
-- `PUT /settings` - Update user settings
-
-## Development Commands
+## 🛠️ Development
 
 ```bash
-# From root directory (monorepo commands)
-pnpm dev                # Run all apps in parallel
-pnpm dev:extension      # Run extension only
-pnpm dev:backend        # Run backend only
-pnpm build              # Build all apps
-pnpm build:extension    # Build extension only
-pnpm build:backend      # Build backend only
-pnpm test               # Run all tests
-pnpm lint               # Lint all packages
-pnpm clean              # Clean all build artifacts
+# Development with hot reload
+pnpm dev
 
-# Database commands (Prisma)
-pnpm prisma:generate    # Generate Prisma client
-pnpm prisma:migrate     # Run migrations
-pnpm prisma:studio      # Open database GUI
-pnpm prisma:push        # Push schema to database
+# Production build
+pnpm build
 
-# Package-specific commands
-pnpm --filter @colder/extension package  # Create extension zip
-pnpm --filter @colder/backend start:prod # Run backend in production
+# Package for distribution
+pnpm package
+
+# Clean build artifacts
+pnpm clean
 ```
 
-## Deployment
+## 🎨 Customization Options
 
-### Backend Deployment (Recommended: Railway, Render, or Heroku)
+### Tone Options
+- **Professional**: Polished but not stiff
+- **Casual**: Conversational and relaxed
+- **Enthusiastic**: High energy and positive
+- **Formal**: Business-like and respectful
+- **Friendly**: Warm and approachable
 
-1. Set up PostgreSQL database
-2. Configure environment variables
-3. Deploy NestJS application
-4. Run database migrations
+### Purpose Options
+- General Connection
+- Coffee Chat Request
+- Informational Interview
+- Collaboration Proposal
+- Job Inquiry
+- Sales/Partnership
+- Custom (your own purpose)
 
-### Extension Publishing
+### Length Options
+- **Short**: 50-100 words
+- **Medium**: 100-200 words
+- **Long**: 200-300 words
 
-1. Build production version: `pnpm build`
-2. Create zip: `pnpm package`
-3. Upload to Chrome Web Store
+## 🔧 Troubleshooting
 
-## Configuration Options
+### "Chrome AI not available"
 
-### AI Models (via OpenRouter)
+**Solutions:**
+1. Verify Chrome version: `chrome://version/` (need 128+)
+2. Enable flag: `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input`
+3. Restart Chrome completely (Cmd+Q / Ctrl+Q)
+4. Check availability in Console:
+   ```javascript
+   await LanguageModel.availability();
+   ```
 
-The extension supports any model available on OpenRouter. Popular options:
-- `openai/gpt-4-turbo-preview` - Best quality
-- `anthropic/claude-3-opus` - Great for nuanced messages
-- `google/gemini-2.0-flash` - Fast and cost-effective
-- `meta-llama/llama-3.1-70b` - Open source alternative
+### Model Download Issues
 
-Change the model in `backend/.env`:
-```env
-DEFAULT_MODEL="your-preferred-model"
-```
+**Check status**: `chrome://on-device-internals`
 
-### Database Options
+**Common fixes:**
+- Ensure 22GB+ free disk space
+- Use Wi-Fi (not cellular/metered connection)
+- Wait 10-30 minutes for initial download
+- Restart Chrome if stuck
 
-While PostgreSQL is recommended, you can use any database supported by Prisma:
-- PostgreSQL (recommended)
-- MySQL
-- SQLite (for development)
-- MongoDB
+### Profile Extraction Fails
 
-## Troubleshooting
+**Solutions:**
+1. Ensure you're on a LinkedIn profile page (`linkedin.com/in/...`)
+2. Refresh the page
+3. Check console for errors (F12)
 
-### Extension Not Loading
-- Ensure you're in developer mode
-- Check console for errors: Right-click extension → Inspect popup
+### Extension Won't Load
 
-### Backend Connection Issues
-- Verify backend is running on port 3000
-- Check CORS settings in `backend/src/main.ts`
-- Ensure `.env` files are properly configured
+**Solutions:**
+1. Rebuild: `pnpm clean && pnpm build`
+2. Check for errors in extension console
+3. Try removing and re-adding the extension
 
-### Database Issues
-- Run `npx prisma db push` to sync schema
-- Check DATABASE_URL in `.env`
-- Verify PostgreSQL is running
+## 🔒 Privacy & Security
 
-### Authentication Issues
-- Verify Supabase credentials match in frontend and backend
-- Check JWT_SECRET is the same in backend
-- Ensure Supabase project is running (if local)
+- ✅ **100% Local Processing**: All AI runs in your browser
+- ✅ **No External API Calls**: No data sent to servers
+- ✅ **No Tracking**: No analytics or telemetry
+- ✅ **Local Storage Only**: Data stays on your device
+- ✅ **No Cloud Sync**: Complete privacy
 
-## Contributing
+## ⚠️ Limitations
 
+- **Chrome Only**: Requires Chrome 128+ with Built-in AI support
+- **Storage**: Needs 22GB for Gemini Nano model
+- **No Mobile**: Chrome AI not available on mobile devices yet
+- **Experimental**: Chrome Built-in AI is still in preview, expect changes
+- **Language**: Currently English only (Spanish, Japanese coming soon)
+
+## 🏗️ How It Works
+
+1. **Profile Extraction**: Content script reads LinkedIn profile data
+2. **AI Processing**: Sends data to local Gemini Nano model
+3. **Message Generation**: AI creates personalized outreach message
+4. **Local Storage**: Saves message history locally
+5. **Polish & Iterate**: Refine messages with user feedback
+
+**Tech Stack:**
+- React + TypeScript
+- Plasmo Framework (Chrome Extension)
+- Chrome Built-in AI (Prompt API)
+- Tailwind CSS + shadcn/ui
+- Chrome Storage API
+
+## 📚 Resources
+
+- [Chrome Built-in AI Docs](https://developer.chrome.com/docs/ai)
+- [Prompt API Reference](https://developer.chrome.com/docs/ai/prompt-api)
+- [Plasmo Framework](https://www.plasmo.com/)
+- [shadcn/ui Components](https://ui.shadcn.com/)
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run tests and linting
+4. Run tests: `pnpm test`
 5. Submit a pull request
 
-## License
+## 📝 License
 
-MIT License - See LICENSE file for details
+MIT License - See [LICENSE](LICENSE) file for details
 
-## Support
+## 🙏 Acknowledgments
 
-For issues and questions:
-- Open an issue on GitHub
-- Check existing issues for solutions
-- Review the documentation
-
-## Security
-
-- Never commit `.env` files
-- Keep API keys secure
-- Use environment variables for sensitive data
-- Regularly update dependencies
+- Built with [Plasmo Framework](https://www.plasmo.com/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Powered by Chrome's Built-in AI (Gemini Nano)
 
 ---
 
-Built with ❤️ for better LinkedIn outreach
+**⚠️ Disclaimer**: This project is not affiliated with Google, Chrome, or LinkedIn. Chrome's Built-in AI is an experimental feature subject to change.
+
+**🚀 Ready to generate personalized LinkedIn messages with local AI? Let's go!**

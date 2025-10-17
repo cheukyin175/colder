@@ -261,12 +261,14 @@ export async function showErrorNotification(error: Error): Promise<void> {
 
   // Use Chrome notifications API if available
   if (chrome?.notifications) {
-    const notificationOptions: chrome.notifications.NotificationOptions = {
+    const notificationOptions: chrome.notifications.NotificationOptions<true> = {
       type: 'basic',
       iconUrl: '/assets/icon-128.png',
       title: 'Colder Extension',
       message: message,
-      buttons: actions?.slice(0, 2).map(action => ({ title: action }))
+      ...(actions && actions.length > 0 && {
+        buttons: actions.slice(0, 2).map(action => ({ title: action }))
+      })
     };
 
     try {

@@ -20,8 +20,11 @@ export type {
   StoredMessage
 } from '../services/storage';
 
+// Import for function implementation
+import type { ExtensionSettings as ExtensionSettingsType } from '../services/storage';
+
 // Create default settings
-export function createDefaultSettings(): ExtensionSettings {
+export function createDefaultSettings(): ExtensionSettingsType {
   return {
     userName: '',
     userRole: '',

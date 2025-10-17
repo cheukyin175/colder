@@ -31,8 +31,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         id: btoa(getProfileUrl()), // Simple ID generation
         linkedinUrl: getProfileUrl(),
         name: name,
-        currentJobTitle: extractJobTitle(),
-        currentCompany: extractCompany(),
+        currentJobTitle: extractJobTitle() ?? undefined,
+        currentCompany: extractCompany() ?? undefined,
         rawProfileText: rawProfileText,
         extractedAt: new Date(),
       };

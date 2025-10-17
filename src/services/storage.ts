@@ -23,6 +23,12 @@ export interface StoredMessage {
   generatedAt: string; // ISO string
 }
 
+export interface OnboardingStatus {
+  hasCompletedOnboarding: boolean;
+  installedVersion?: string;
+  completedAt?: string; // ISO string
+}
+
 interface StorageData {
   settings: ExtensionSettings;
   messages: StoredMessage[];
@@ -36,6 +42,7 @@ class ChromeStorageService {
   private readonly SETTINGS_KEY = 'colder_settings';
   private readonly MESSAGES_KEY = 'colder_messages';
   private readonly USAGE_KEY = 'colder_usage';
+  private readonly ONBOARDING_KEY = 'colder_onboarding';
   private readonly MAX_MESSAGES = 100; // Keep last 100 messages
 
   /**
@@ -301,6 +308,57 @@ class ChromeStorageService {
     } catch (error) {
       console.error('Error importing data:', error);
       throw new Error('Failed to import data');
+    }
+  }
+
+  /**
+   * Get onboarding status
+   */
+  async getOnboardingStatus(): Promise<OnboardingStatus> {
+    try {
+      const result = await chrome.storage.local.get(this.ONBOARDING_KEY);
+      return result[this.ONBOARDING_KEY] || {
+        hasCompletedOnboarding: false
+      };
+    } catch (error) {
+      console.error('Error reading onboarding status:', error);
+      return {
+        hasCompletedOnboarding: false
+      };
+    }
+  }
+
+  /**
+   * Mark onboarding as complete
+   */
+  async markOnboardingComplete(version?: string): Promise<void> {
+    try {
+      await chrome.storage.local.set({
+        [this.ONBOARDING_KEY]: {
+          hasCompletedOnboarding: true,
+          installedVersion: version,
+          completedAt: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Error marking onboarding complete:', error);
+      throw new Error('Failed to update onboarding status');
+    }
+  }
+
+  /**
+   * Reset onboarding status (for testing)
+   */
+  async resetOnboarding(): Promise<void> {
+    try {
+      await chrome.storage.local.set({
+        [this.ONBOARDING_KEY]: {
+          hasCompletedOnboarding: false
+        }
+      });
+    } catch (error) {
+      console.error('Error resetting onboarding:', error);
+      throw new Error('Failed to reset onboarding');
     }
   }
 }

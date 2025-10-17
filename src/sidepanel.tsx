@@ -8,6 +8,7 @@ import { Label } from "./components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { ScrollArea } from "./components/ui/scroll-area";
 import { Separator } from "./components/ui/separator";
+import { Onboarding } from "./components/Onboarding";
 import {
     Sparkles,
     Settings,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import "./styles/global.css";
 
-type View = "generate" | "profile" | "settings" | "history";
+type View = "generate" | "profile" | "settings" | "history" | "onboarding";
 type GenerateState = "idle" | "loading" | "message" | "error" | "checking";
 
 function IndexSidePanel() {
@@ -71,6 +72,14 @@ function IndexSidePanel() {
 
     useEffect(() => {
         const initialize = async () => {
+            // Check onboarding status first
+            const onboardingStatus = await storage.getOnboardingStatus();
+            if (!onboardingStatus.hasCompletedOnboarding) {
+                setActiveView("onboarding");
+                setGenerateState("idle");
+                return;
+            }
+
             const availability = await chromeAI.checkAvailability();
             setAiAvailable(availability.available);
             setAiStatus(availability.message);
@@ -133,9 +142,9 @@ function IndexSidePanel() {
         checkLinkedInProfile();
 
         const handleTabUpdate = (
-            tabId: number,
+            _tabId: number,
             changeInfo: chrome.tabs.TabChangeInfo,
-            tab: chrome.tabs.Tab
+            _tab: chrome.tabs.Tab
         ) => {
             if (changeInfo.url) {
                 checkLinkedInProfile();
@@ -363,6 +372,72 @@ function IndexSidePanel() {
         });
         setActiveView("generate");
         setGenerateState("message");
+    };
+
+    const handleCompleteOnboarding = async () => {
+        await storage.markOnboardingComplete();
+        setActiveView("generate");
+
+        // Initialize AI after onboarding
+        const availability = await chromeAI.checkAvailability();
+        setAiAvailable(availability.available);
+        setAiStatus(availability.message);
+
+        if (availability.available) {
+            setGenerateState("idle");
+        } else {
+            setGenerateState("error");
+            setError(availability.message);
+        }
+
+        // Load other data
+        const savedSettings = await storage.getSettings();
+        setSettings(savedSettings);
+
+        const messages = await storage.getMessages();
+        setMessageHistory(messages);
+    };
+
+    const handleSkipToProfile = async () => {
+        await storage.markOnboardingComplete();
+        setActiveView("profile");
+
+        // Initialize AI in background
+        const availability = await chromeAI.checkAvailability();
+        setAiAvailable(availability.available);
+        setAiStatus(availability.message);
+
+        if (availability.available) {
+            setGenerateState("idle");
+        } else {
+            setGenerateState("error");
+            setError(availability.message);
+        }
+
+        // Load other data
+        const savedSettings = await storage.getSettings();
+        setSettings(savedSettings);
+
+        const messages = await storage.getMessages();
+        setMessageHistory(messages);
+    };
+
+    const handleRefreshPage = async () => {
+        try {
+            const [tab] = await chrome.tabs.query({
+                active: true,
+                currentWindow: true,
+            });
+            if (tab?.id) {
+                await chrome.tabs.reload(tab.id);
+                // Reset state after refresh
+                setGenerateState("idle");
+                setError("");
+            }
+        } catch (e: any) {
+            console.error("Error refreshing page:", e);
+            setError("Failed to refresh page");
+        }
     };
 
     const renderProfile = () => (
@@ -661,10 +736,18 @@ function IndexSidePanel() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         No LinkedIn Profile Detected
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 mb-4">
                         Navigate to a LinkedIn profile to generate personalized
                         messages
                     </p>
+                    <Button
+                        onClick={handleRefreshPage}
+                        variant="outline"
+                        size="sm"
+                    >
+                        <RotateCw className="mr-2 h-4 w-4" />
+                        Refresh Page
+                    </Button>
                 </div>
             );
         }
@@ -691,12 +774,23 @@ function IndexSidePanel() {
                             Error
                         </h3>
                         <p className="text-sm text-gray-600 mb-4">{error}</p>
-                        <Button
-                            onClick={() => setGenerateState("idle")}
-                            variant="outline"
-                        >
-                            Try Again
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={() => setGenerateState("idle")}
+                                variant="outline"
+                            >
+                                Try Again
+                            </Button>
+                            {error.toLowerCase().includes("refresh") && (
+                                <Button
+                                    onClick={handleRefreshPage}
+                                    variant="outline"
+                                >
+                                    <RotateCw className="mr-2 h-4 w-4" />
+                                    Refresh Page
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 );
 
@@ -974,21 +1068,34 @@ function IndexSidePanel() {
                             </p>
                         </div>
                     </div>
-                    {aiAvailable ? (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-colder-ice/10 border border-colder-ice/20">
-                            <CheckCircle className="h-3.5 w-3.5 text-colder-ice-deep" />
-                            <span className="text-xs font-medium text-colder-ice-deep">
-                                AI Ready
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-200">
-                            <AlertCircle className="h-3.5 w-3.5 text-red-600" />
-                            <span className="text-xs font-medium text-red-600">
-                                AI Unavailable
-                            </span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {isOnLinkedIn && (
+                            <Button
+                                onClick={handleRefreshPage}
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2"
+                                title="Refresh LinkedIn page"
+                            >
+                                <RotateCw className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+                        {aiAvailable ? (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-colder-ice/10 border border-colder-ice/20">
+                                <CheckCircle className="h-3.5 w-3.5 text-colder-ice-deep" />
+                                <span className="text-xs font-medium text-colder-ice-deep">
+                                    AI Ready
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-200">
+                                <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+                                <span className="text-xs font-medium text-red-600">
+                                    AI Unavailable
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -1054,6 +1161,16 @@ function IndexSidePanel() {
                     className="flex-1 m-0 overflow-hidden"
                 >
                     {renderSettings()}
+                </TabsContent>
+
+                <TabsContent
+                    value="onboarding"
+                    className="flex-1 m-0 overflow-hidden"
+                >
+                    <Onboarding
+                        onComplete={handleCompleteOnboarding}
+                        onSkipToProfile={handleSkipToProfile}
+                    />
                 </TabsContent>
             </Tabs>
         </div>

@@ -5,6 +5,7 @@
 
 import { setupMessageListener } from './message-handler';
 import { logError } from '../utils/error-handlers';
+import { storage } from '../services/storage';
 
 // Export to prevent "isolatedModules" error
 export const startTime = Date.now();
@@ -28,11 +29,16 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[Colder] Extension installed/updated:', details.reason);
 
   if (details.reason === 'install') {
-    console.log('[Colder] Extension installed - user will be prompted to sign in');
+    console.log('[Colder] Extension installed - setting up first-launch onboarding');
+
+    // Initialize onboarding status for first-time users
+    await storage.resetOnboarding();
+    console.log('[Colder] ✓ Onboarding status initialized');
   }
 
   if (details.reason === 'update') {
     console.log('[Colder] Updated from version:', details.previousVersion);
+    // Could optionally show "What's New" for updates
   }
 });
 
